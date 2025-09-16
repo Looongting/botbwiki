@@ -78,6 +78,8 @@ def main():
     try:
         # 导入并运行机器人
         import bot
+        # 运行机器人
+        bot.nonebot.run()
     except KeyboardInterrupt:
         print("\n👋 机器人已停止")
     except Exception as e:

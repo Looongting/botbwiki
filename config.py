@@ -25,9 +25,9 @@ class Config:
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     LOG_FILE: str = os.getenv("LOG_FILE", "bot.log")
     
-    # 短链服务配置
-    SHORTLINK_TIMEOUT: int = int(os.getenv("SHORTLINK_TIMEOUT", "5"))
-    SHORTLINK_RETRY: int = int(os.getenv("SHORTLINK_RETRY", "3"))
+    # 短链服务配置 - 平衡速度和成功率
+    SHORTLINK_TIMEOUT: int = int(os.getenv("SHORTLINK_TIMEOUT", "2"))
+    SHORTLINK_RETRY: int = int(os.getenv("SHORTLINK_RETRY", "1"))
     
     # 短链服务 URL
     SHORTLINK_API_URL: str = "https://api.b23.tv/shorten"
@@ -37,6 +37,20 @@ class Config:
     DEFAULT_RANDOM_MIN: int = 1
     DEFAULT_RANDOM_MAX: int = 100
     MAX_RANDOM_RANGE: int = 10000
+    
+    # Wiki配置 - 关键字到wiki URL的映射
+    WIKI_CONFIGS: dict = {
+        "gd": {
+            "url": "https://wiki.biligame.com/lysk",
+            "api_url": "https://wiki.biligame.com/lysk/api.php",
+            "name": "恋与深空WIKI"
+        },
+        "m": {
+            "url": "https://wiki.biligame.com/mistria", 
+            "api_url": "https://wiki.biligame.com/mistria/api.php",
+            "name": "米斯特利亚WIKI"
+        }
+    }
 
 
 # 全局配置实例
