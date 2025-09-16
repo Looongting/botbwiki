@@ -212,6 +212,8 @@ python check_env.py
   - 支持 systemd 服务管理，实现开机自启
   - 优化了 Linux 环境下的配置和运行
   - 添加了防火墙配置和系统服务管理
+  - 支持 Git 部署，实现代码版本控制和自动化部署
+  - 提供完整的 Git 部署指南和最佳实践
 - v1.0.9: 支持多Wiki站点配置
   - 添加了多Wiki站点支持，通过配置项管理关键字和对应的Wiki URL
   - 支持 `gd` 关键字访问恋与深空WIKI (https://wiki.biligame.com/lysk)
