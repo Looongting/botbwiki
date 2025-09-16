@@ -156,6 +156,10 @@ Lagrange.OneBot/
 *.dll
 *.pdb
 
+# 云服务器部署相关
+deploy.log
+deployment.log
+
 # 数据库文件
 *.db
 *.sqlite

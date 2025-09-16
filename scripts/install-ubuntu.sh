@@ -163,9 +163,31 @@ EOF
 deploy_bot() {
     log_info "部署 Python 机器人..."
     
-    # 创建目录
-    sudo mkdir -p /opt/qq-bot
-    cd /opt/qq-bot
+    # 检查是否提供了 Git 仓库地址
+    if [[ -n "$GIT_REPO" ]]; then
+        log_info "从 Git 仓库克隆代码: $GIT_REPO"
+        
+        # 克隆仓库
+        sudo rm -rf /opt/qq-bot
+        sudo git clone "$GIT_REPO" /opt/qq-bot
+        sudo chown -R $USER:$USER /opt/qq-bot
+        cd /opt/qq-bot
+        
+        # 检查是否有指定分支
+        if [[ -n "$GIT_BRANCH" ]]; then
+            git checkout "$GIT_BRANCH"
+        fi
+        
+        log_success "代码克隆完成"
+    else
+        log_info "创建机器人目录..."
+        
+        # 创建目录
+        sudo mkdir -p /opt/qq-bot
+        cd /opt/qq-bot
+        
+        log_warning "未提供 Git 仓库地址，请手动上传代码到 /opt/qq-bot/ 目录"
+    fi
     
     # 创建虚拟环境
     python3 -m venv venv
@@ -174,9 +196,16 @@ deploy_bot() {
     # 升级 pip
     pip install --upgrade pip
     
+    # 安装依赖（如果存在 requirements.txt）
+    if [[ -f "requirements.txt" ]]; then
+        log_info "安装 Python 依赖..."
+        pip install -r requirements.txt
+        log_success "依赖安装完成"
+    else
+        log_warning "未找到 requirements.txt 文件"
+    fi
+    
     log_success "Python 机器人环境准备完成"
-    log_warning "请手动上传机器人代码到 /opt/qq-bot/ 目录"
-    log_warning "然后运行: pip install -r requirements.txt"
 }
 
 # 创建环境变量文件
@@ -274,9 +303,16 @@ show_next_steps() {
     log_success "安装完成！"
     echo
     echo "后续步骤："
-    echo "1. 上传机器人代码到 /opt/qq-bot/ 目录"
-    echo "2. 安装 Python 依赖："
-    echo "   cd /opt/qq-bot && source venv/bin/activate && pip install -r requirements.txt"
+    
+    if [[ -n "$GIT_REPO" ]]; then
+        echo "✅ 代码已从 Git 仓库克隆"
+        echo "✅ Python 依赖已安装"
+    else
+        echo "1. 上传机器人代码到 /opt/qq-bot/ 目录"
+        echo "2. 安装 Python 依赖："
+        echo "   cd /opt/qq-bot && source venv/bin/activate && pip install -r requirements.txt"
+    fi
+    
     echo "3. 配置 QQ 账号信息："
     echo "   sudo vim /opt/lagrange-onebot/appsettings.json"
     echo "4. 启动服务："
@@ -290,6 +326,52 @@ show_next_steps() {
     echo "   sudo systemctl status lagrange-onebot  # 查看状态"
     echo "   sudo systemctl restart lagrange-onebot # 重启服务"
     echo "   sudo systemctl stop lagrange-onebot    # 停止服务"
+    echo
+    echo "代码更新："
+    echo "   cd /opt/qq-bot && git pull origin main"
+    echo "   source venv/bin/activate && pip install -r requirements.txt"
+    echo "   sudo systemctl restart qq-bot"
+}
+
+# 显示使用说明
+show_usage() {
+    echo "使用方法："
+    echo "  $0 [选项]"
+    echo
+    echo "选项："
+    echo "  -r, --repo URL      Git 仓库地址"
+    echo "  -b, --branch NAME   指定分支名称 (默认: main)"
+    echo "  -h, --help          显示此帮助信息"
+    echo
+    echo "示例："
+    echo "  $0 -r https://github.com/username/repo.git"
+    echo "  $0 -r https://github.com/username/repo.git -b develop"
+    echo
+}
+
+# 解析命令行参数
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            -r|--repo)
+                GIT_REPO="$2"
+                shift 2
+                ;;
+            -b|--branch)
+                GIT_BRANCH="$2"
+                shift 2
+                ;;
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            *)
+                log_error "未知参数: $1"
+                show_usage
+                exit 1
+                ;;
+        esac
+    done
 }
 
 # 主函数
@@ -297,6 +379,22 @@ main() {
     echo "=========================================="
     echo "    QQ 机器人 Ubuntu 云服务器部署脚本"
     echo "=========================================="
+    echo
+    
+    # 解析命令行参数
+    parse_args "$@"
+    
+    # 显示配置信息
+    if [[ -n "$GIT_REPO" ]]; then
+        log_info "Git 仓库: $GIT_REPO"
+        if [[ -n "$GIT_BRANCH" ]]; then
+            log_info "分支: $GIT_BRANCH"
+        else
+            log_info "分支: main (默认)"
+        fi
+    else
+        log_info "部署模式: 手动上传代码"
+    fi
     echo
     
     check_root

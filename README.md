@@ -50,7 +50,8 @@ bot/
 │   ├── quick-start.md          # 快速开始
 │   ├── qq-bot-setup.md         # QQ机器人配置
 │   ├── lagrange-config-guide.md # Lagrange配置指南
-│   └── ubuntu-deployment.md    # Ubuntu云服务器部署指南
+│   ├── ubuntu-deployment.md    # Ubuntu云服务器部署指南
+│   └── git-deployment.md       # Git部署指南
 ├── scripts/                    # 部署脚本目录
 │   └── install-ubuntu.sh       # Ubuntu一键部署脚本
 └── Lagrange.OneBot/            # OneBot实现（需要单独下载）
@@ -84,7 +85,9 @@ bot/
 - 带宽: 3Mbps+
 - 系统: Ubuntu Server 18.04.1 LTS
 
-详细部署指南请参考：[Ubuntu 云服务器部署指南](docs/ubuntu-deployment.md)
+详细部署指南请参考：
+- [Ubuntu 云服务器部署指南](docs/ubuntu-deployment.md)
+- [Git 部署指南](docs/git-deployment.md)
 
 ### 2. 创建虚拟环境并安装依赖
 
