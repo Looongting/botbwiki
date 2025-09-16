@@ -1,0 +1,21 @@
+# Nonebot2 核心依赖
+nonebot2[fastapi]>=2.0.0
+nonebot-adapter-onebot>=2.0.0
+
+# HTTP 请求库
+httpx>=0.24.0
+
+# 数据验证
+pydantic>=1.10.0
+
+# 环境变量管理
+python-dotenv>=1.0.0
+
+# 日志增强（可选）
+loguru>=0.6.0
+
+# 开发依赖（可选）
+pytest>=7.0.0
+black>=22.0.0
+isort>=5.0.0
+flake8>=5.0.0
