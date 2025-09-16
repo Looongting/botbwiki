@@ -29,16 +29,33 @@
 
 ```
 bot/
-├── README.md                 # 项目说明文档
-├── pyproject.toml           # 项目配置文件
-├── .env.example             # 环境变量示例
-├── bot.py                   # 机器人主程序
-├── plugins/                 # 插件目录
+├── README.md                    # 项目说明文档
+├── pyproject.toml              # 项目配置文件
+├── requirements.txt            # Python依赖包
+├── .env.example                # 环境变量示例
+├── .gitignore                  # Git忽略文件
+├── start.py                    # 机器人启动脚本
+├── bot.py                      # 机器人主程序
+├── config.py                   # 配置文件
+├── check_env.py                # 环境检查脚本
+├── verify_config.py            # 配置验证脚本
+├── lagrange-config-template.json # Lagrange配置模板
+├── plugins/                    # 插件目录
 │   ├── __init__.py
-│   ├── shortlink.py         # 短链生成插件
-│   └── random.py            # 随机数生成插件
-└── docs/                    # 文档目录
-    └── usage.md             # 使用说明
+│   ├── shortlink.py            # 多Wiki站点短链生成插件
+│   └── random.py               # 随机数生成插件
+├── docs/                       # 文档目录
+│   ├── usage.md                # 使用说明
+│   ├── installation.md         # 安装指南
+│   ├── quick-start.md          # 快速开始
+│   ├── qq-bot-setup.md         # QQ机器人配置
+│   ├── lagrange-config-guide.md # Lagrange配置指南
+│   └── ubuntu-deployment.md    # Ubuntu云服务器部署指南
+├── scripts/                    # 部署脚本目录
+│   └── install-ubuntu.sh       # Ubuntu一键部署脚本
+└── Lagrange.OneBot/            # OneBot实现（需要单独下载）
+    └── bin/Release/net9.0/win-x64/
+        └── Lagrange.OneBot.exe
 ```
 
 ## 快速开始
@@ -51,6 +68,23 @@ bot/
   - [go-cqhttp](https://github.com/Mrs4s/go-cqhttp/releases)
   - 或其他 Onebot 实现
 - 网络连接（用于短链生成）
+
+### 部署方式选择
+
+#### 本地部署（Windows）
+适合个人使用，配置简单，适合初学者。
+
+#### 云服务器部署（Ubuntu）
+适合长期运行，稳定性更好，支持 24/7 运行。
+
+**推荐配置**：
+- CPU: 2核
+- 内存: 2GB
+- 硬盘: 20GB+ SSD
+- 带宽: 3Mbps+
+- 系统: Ubuntu Server 18.04.1 LTS
+
+详细部署指南请参考：[Ubuntu 云服务器部署指南](docs/ubuntu-deployment.md)
 
 ### 2. 创建虚拟环境并安装依赖
 
@@ -169,6 +203,12 @@ python check_env.py
 
 ## 更新日志
 
+- v1.1.0: 添加云服务器部署支持
+  - 新增 Ubuntu 云服务器部署指南
+  - 提供一键部署脚本 `scripts/install-ubuntu.sh`
+  - 支持 systemd 服务管理，实现开机自启
+  - 优化了 Linux 环境下的配置和运行
+  - 添加了防火墙配置和系统服务管理
 - v1.0.9: 支持多Wiki站点配置
   - 添加了多Wiki站点支持，通过配置项管理关键字和对应的Wiki URL
   - 支持 `gd` 关键字访问恋与深空WIKI (https://wiki.biligame.com/lysk)
