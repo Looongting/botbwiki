@@ -45,15 +45,13 @@ bot/
 │   ├── shortlink.py            # 多Wiki站点短链生成插件
 │   └── random.py               # 随机数生成插件
 ├── docs/                       # 文档目录
-│   ├── usage.md                # 使用说明
-│   ├── installation.md         # 安装指南
-│   ├── quick-start.md          # 快速开始
-│   ├── qq-bot-setup.md         # QQ机器人配置
-│   ├── lagrange-config-guide.md # Lagrange配置指南
-│   ├── ubuntu-deployment.md    # Ubuntu云服务器部署指南
-│   └── git-deployment.md       # Git部署指南
+│   └── ubuntu-deployment.md    # Ubuntu云服务器部署指南（唯一权威部署文档）
 ├── scripts/                    # 部署脚本目录
-│   └── install-ubuntu.sh       # Ubuntu一键部署脚本
+│   ├── install-ubuntu.sh       # Ubuntu一键部署脚本
+│   └── fix-permissions.sh      # 权限修复脚本
+├── systemd-service-templates/  # 系统服务模板目录
+│   ├── lagrange-onebot.service # Lagrange.OneBot服务模板
+│   └── qq-bot.service          # QQ机器人服务模板
 └── Lagrange.OneBot/            # OneBot实现（需要单独下载）
     └── bin/Release/net9.0/win-x64/
         └── Lagrange.OneBot.exe
@@ -69,6 +67,8 @@ bot/
   - [go-cqhttp](https://github.com/Mrs4s/go-cqhttp/releases)
   - 或其他 Onebot 实现
 - 网络连接（用于短链生成）
+- **下载加速工具**（可选但推荐）：
+  - [Xget](https://github.com/xixu-me/Xget) - 超高性能的开发者资源访问加速引擎，特别适合下载大型文件
 
 ### 部署方式选择
 
@@ -87,7 +87,18 @@ bot/
 
 详细部署指南请参考：
 - [Ubuntu 云服务器部署指南](docs/ubuntu-deployment.md)
-- [Git 部署指南](docs/git-deployment.md)
+
+#### 权限问题修复
+
+如果在部署过程中遇到权限问题，可以使用权限修复脚本：
+
+```bash
+# 修复所有权限问题
+bash scripts/fix-permissions.sh
+
+# 仅查看当前权限状态
+bash scripts/fix-permissions.sh --show
+```
 
 ### 2. 创建虚拟环境并安装依赖
 
@@ -155,10 +166,34 @@ python check_env.py
 
 **重要**：您还需要安装 QQ 机器人本体才能与 QQ 群交互。
 
-请参考 [QQ 机器人配置指南](docs/qq-bot-setup.md) 完成以下步骤：
-1. 下载并配置 LagrangeCore 或其他 Onebot 实现
-2. 启动 Onebot 服务
-3. 重新启动您的机器人
+#### 使用 Lagrange.OneBot（推荐）
+
+1. **下载最新版本**：
+   ```bash
+   # 由于 Lagrange 文件较大，推荐使用 Xget 加速下载
+   # 使用 Xget 加速下载最新 nightly 版本（推荐）：
+   wget "https://xuc.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz"
+   
+   # 或者直接访问 GitHub 下载（可能较慢）：
+   # https://github.com/LagrangeDev/Lagrange.Core/releases
+   ```
+
+2. **配置文件**：
+   ```bash
+   # 使用项目提供的配置模板
+   cp lagrange-config-template.json /path/to/lagrange/appsettings.json
+   
+   # 编辑配置文件，设置QQ号码
+   vim /path/to/lagrange/appsettings.json
+   ```
+
+3. **关键配置项**：
+   - `Account.Uin`: 设置为您的QQ号码
+   - `SignServerUrl`: 已配置为官方服务器 `https://sign.lagrangecore.org/api/sign/30366`
+   - `ConsoleCompatibilityMode`: 云服务器部署设为 `true`
+   - `HeartBeatEnable`: 必须设为 `true` 保持连接稳定
+
+详细部署与配置请参阅 `docs/ubuntu-deployment.md`。
 
 ### 7. 验证功能
 
@@ -204,8 +239,48 @@ python check_env.py
 
 机器人仅响应群聊中符合指定格式的指令，不会响应私聊消息。
 
+## 项目维护
+
+### 项目清理
+
+项目已进行过全面清理，删除了以下不必要的文件：
+
+- **Python缓存文件**: 清理了 `__pycache__` 目录和 `.pyc` 文件
+- **日志文件**: 清理了运行时的日志文件 (`bot.log`, `bot_output.log`)
+- **测试脚本**: 删除了过时的测试脚本和临时文件
+- **临时文件**: 清理了所有临时文件和备份文件
+
+### 环境检查
+
+项目提供了完整的环境检查工具：
+
+```bash
+# 检查Python环境和依赖
+python check_env.py
+
+# 验证Lagrange配置
+python verify_config.py
+```
+
 ## 更新日志
 
+- v1.1.3: 优化 Lagrange 下载体验
+  - 添加 Xget 加速下载支持，解决 Lagrange 文件较大下载缓慢的问题
+  - 更新下载说明，使用最新的 nightly 版本和 Xget 加速链接
+  - 在环境准备部分添加 Xget 工具介绍，提升用户体验
+- v1.1.2: 项目清理和维护
+  - 清理了Python缓存文件和临时文件
+  - 删除了过时的测试脚本和日志文件
+  - 优化了项目结构，保持代码库整洁
+  - 更新了项目文档，添加维护说明
+- v1.1.1: 完善部署配置和权限管理
+  - 更新官方签名服务器地址为 `https://sign.lagrangecore.org/api/sign/30366`
+  - 完善 Lagrange 配置模板，确保云服务器部署兼容性
+  - 添加权限修复脚本 `scripts/fix-permissions.sh`
+  - 改进 systemd 服务配置，使用非特权用户运行
+  - 添加系统服务模板文件，便于自定义配置
+  - 优化安装脚本的用户权限和安全设置
+  - 完善环境变量配置，添加更多可配置项
 - v1.1.0: 添加云服务器部署支持
   - 新增 Ubuntu 云服务器部署指南
   - 提供一键部署脚本 `scripts/install-ubuntu.sh`

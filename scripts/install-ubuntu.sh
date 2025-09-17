@@ -124,7 +124,7 @@ configure_lagrange() {
       "Default": "Information"
     }
   },
-  "SignServerUrl": "https://sign.lagrangecore.org/api/sign",
+  "SignServerUrl": "https://sign.lagrangecore.org/api/sign/30366",
   "SignProxyUrl": "",
   "MusicSignServerUrl": "",
   "Account": {
@@ -144,7 +144,7 @@ configure_lagrange() {
   "Implementations": [
     {
       "Type": "ReverseWebSocket",
-      "Host": "0.0.0.0",
+      "Host": "127.0.0.1",
       "Port": 8080,
       "Suffix": "/onebot/v11/ws",
       "ReconnectInterval": 5000,
@@ -215,7 +215,7 @@ create_env_file() {
     cat > /opt/qq-bot/.env << 'EOF'
 # Onebot 连接配置
 ONEBOT_WS_URL=ws://127.0.0.1:8080/onebot/v11/ws
-ONEBOT_HTTP_URL=http://127.0.0.0:8080
+ONEBOT_HTTP_URL=http://127.0.0.1:8080
 
 # 机器人配置
 BOT_NAME=QQ机器人
@@ -242,14 +242,32 @@ create_systemd_services() {
 [Unit]
 Description=Lagrange.OneBot Service
 After=network.target
+Wants=network-online.target
 
 [Service]
 Type=simple
-User=root
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/opt/lagrange-onebot
 ExecStart=/opt/lagrange-onebot/Lagrange.OneBot
 Restart=always
-RestartSec=5
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lagrange-onebot
+
+# 环境变量
+Environment=DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
+# 安全设置
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/lagrange-onebot
+
+# 资源限制
+MemoryMax=512M
+TasksMax=100
 
 [Install]
 WantedBy=multi-user.target
@@ -260,16 +278,31 @@ EOF
 [Unit]
 Description=QQ Bot Service
 After=network.target lagrange-onebot.service
+Wants=network-online.target
 Requires=lagrange-onebot.service
 
 [Service]
 Type=simple
-User=root
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/opt/qq-bot
-Environment=PATH=/opt/qq-bot/venv/bin
+Environment=PATH=/opt/qq-bot/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=/opt/qq-bot/venv/bin/python start.py
 Restart=always
-RestartSec=5
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=qq-bot
+
+# 安全设置
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/qq-bot
+
+# 资源限制
+MemoryMax=256M
+TasksMax=50
 
 [Install]
 WantedBy=multi-user.target

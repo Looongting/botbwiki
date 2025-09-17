@@ -1,0 +1,32 @@
+[Unit]
+Description=Lagrange.OneBot Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/lagrange-onebot
+ExecStart=/opt/lagrange-onebot/Lagrange.OneBot
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lagrange-onebot
+
+# 环境变量
+Environment=DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
+# 安全设置
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/lagrange-onebot
+
+# 资源限制
+MemoryMax=512M
+TasksMax=100
+
+[Install]
+WantedBy=multi-user.target

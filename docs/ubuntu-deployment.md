@@ -67,48 +67,56 @@ sudo chown -R $USER:$USER /opt/lagrange-onebot
 
 ### 4. 配置 Lagrange.OneBot
 
+根据 [Lagrange 官方文档](https://lagrangedev.github.io/Lagrange.Doc/v1/Lagrange.OneBot/Config/)，创建正确的配置文件：
+
 ```bash
 # 创建配置文件
 cat > /opt/lagrange-onebot/appsettings.json << 'EOF'
 {
-  "$schema": "https://raw.githubusercontent.com/LagrangeDev/Lagrange.Core/master/Lagrange.OneBot/Resources/appsettings_schema.json",
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information"
-    }
-  },
-  "SignServerUrl": "https://sign.lagrangecore.org/api/sign",
-  "SignProxyUrl": "",
-  "MusicSignServerUrl": "",
-  "Account": {
-    "Uin": 0,
-    "Password": "",
-    "Protocol": "Linux",
-    "AutoReconnect": true,
-    "GetOptimumServer": true
-  },
-  "Message": {
-    "IgnoreSelf": true,
-    "StringPost": false
-  },
-  "QrCode": {
-    "ConsoleCompatibilityMode": true
-  },
-  "Implementations": [
-    {
-      "Type": "ReverseWebSocket",
-      "Host": "0.0.0.0",
-      "Port": 8080,
-      "Suffix": "/onebot/v11/ws",
-      "ReconnectInterval": 5000,
-      "HeartBeatInterval": 5000,
-      "HeartBeatEnable": true,
-      "AccessToken": ""
-    }
-  ]
+    "$schema": "https://raw.githubusercontent.com/LagrangeDev/Lagrange.Core/master/Lagrange.OneBot/Resources/appsettings_schema.json",
+    "Logging": {
+        "LogLevel": {
+            "Default": "Information"
+        }
+    },
+    "SignServerUrl": "https://sign.lagrangecore.org/api/sign/30366",
+    "SignProxyUrl": "",
+    "MusicSignServerUrl": "",
+    "Account": {
+        "Uin": 0,
+        "Password": "",
+        "Protocol": "Linux",
+        "AutoReconnect": true,
+        "GetOptimumServer": true
+    },
+    "Message": {
+        "IgnoreSelf": true,
+        "StringPost": false
+    },
+    "QrCode": {
+        "ConsoleCompatibilityMode": true
+    },
+    "Implementations": [
+        {
+            "Type": "ReverseWebSocket",
+            "Host": "127.0.0.1",
+            "Port": 8080,
+            "Suffix": "/onebot/v11/ws",
+            "ReconnectInterval": 5000,
+            "HeartBeatInterval": 5000,
+            "HeartBeatEnable": true,
+            "AccessToken": ""
+        }
+    ]
 }
 EOF
 ```
+
+**重要配置说明**：
+- `SignServerUrl`: 必须设置为官方签名服务器
+- `ConsoleCompatibilityMode`: 服务器部署设置为 `true`
+- `HeartBeatEnable`: 必须设置为 `true`
+- `Host`: 使用 `127.0.0.1` 而非 `0.0.0.0`（安全考虑）
 
 ### 5. 部署 Python 机器人
 
@@ -167,11 +175,15 @@ After=network.target
 
 [Service]
 Type=simple
-User=root
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/opt/lagrange-onebot
 ExecStart=/opt/lagrange-onebot/Lagrange.OneBot
 Restart=always
-RestartSec=5
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lagrange-onebot
 
 [Install]
 WantedBy=multi-user.target
@@ -189,12 +201,16 @@ Requires=lagrange-onebot.service
 
 [Service]
 Type=simple
-User=root
+User=ubuntu
+Group=ubuntu
 WorkingDirectory=/opt/qq-bot
-Environment=PATH=/opt/qq-bot/venv/bin
+Environment=PATH=/opt/qq-bot/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ExecStart=/opt/qq-bot/venv/bin/python start.py
 Restart=always
-RestartSec=5
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=qq-bot
 
 [Install]
 WantedBy=multi-user.target
@@ -279,7 +295,37 @@ sudo systemctl disable qq-bot
    sudo chown -R $USER:$USER /opt/qq-bot
    ```
 
-3. **Python 依赖问题**
+3. **VSCode 无法写入文件权限问题**
+   
+   **问题现象**：在 VSCode 中编辑 `/opt/` 目录下的文件时，出现 "permission denied" 错误提示。
+   
+   **原因分析**：文件属于 `root` 用户，而 VSCode 以普通用户身份运行。
+   
+   **解决方案**：
+   ```bash
+   # 方案1：修改文件所有者（推荐）
+   sudo chown $USER:$USER /opt/lagrange-onebot/appsettings.json
+   sudo chown $USER:$USER /opt/qq-bot/.env
+   
+   # 方案2：修改整个目录的所有者
+   sudo chown -R $USER:$USER /opt/lagrange-onebot
+   sudo chown -R $USER:$USER /opt/qq-bot
+   
+   # 方案3：临时使用 sudo 权限编辑（不推荐）
+   sudo code /opt/lagrange-onebot/appsettings.json
+   ```
+   
+   **验证修复**：
+   ```bash
+   # 检查文件权限
+   ls -la /opt/lagrange-onebot/appsettings.json
+   ls -la /opt/qq-bot/.env
+   
+   # 应该显示当前用户为所有者
+   # -rw-r--r-- 1 ubuntu ubuntu 981 Sep 17 19:39 /opt/lagrange-onebot/appsettings.json
+   ```
+
+4. **Python 依赖问题**
    ```bash
    cd /opt/qq-bot
    source venv/bin/activate

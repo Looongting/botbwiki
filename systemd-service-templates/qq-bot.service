@@ -1,0 +1,31 @@
+[Unit]
+Description=QQ Bot Service
+After=network.target lagrange-onebot.service
+Wants=network-online.target
+Requires=lagrange-onebot.service
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/qq-bot
+Environment=PATH=/opt/qq-bot/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/qq-bot/venv/bin/python start.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=qq-bot
+
+# 安全设置
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/qq-bot
+
+# 资源限制
+MemoryMax=256M
+TasksMax=50
+
+[Install]
+WantedBy=multi-user.target
