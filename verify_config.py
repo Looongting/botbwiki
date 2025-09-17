@@ -35,8 +35,8 @@ def verify_config():
                 return False
             
             impl = implementations[0]
-            if impl.get("Type") != "ReverseWebSocket":
-                print("❌ 配置类型不是 ReverseWebSocket")
+            if impl.get("Type") != "ForwardWebSocket":
+                print("❌ 配置类型不是 ForwardWebSocket")
                 return False
             
             if impl.get("Port") != 8080:

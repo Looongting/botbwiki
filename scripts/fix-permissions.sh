@@ -42,16 +42,16 @@ check_directory() {
 fix_lagrange_permissions() {
     log_info "修复 Lagrange.OneBot 权限..."
     
-    if check_directory "/opt/lagrange-onebot"; then
+if check_directory "/opt/lagrange"; then
         # 修改所有者为当前用户
-        sudo chown -R $USER:$USER /opt/lagrange-onebot
+        sudo chown -R $USER:$USER /opt/lagrange
         
         # 设置执行权限
-        sudo chmod +x /opt/lagrange-onebot/Lagrange.OneBot
+        sudo chmod +x /opt/lagrange/Lagrange.OneBot
         
         # 设置配置文件权限
-        if [[ -f "/opt/lagrange-onebot/appsettings.json" ]]; then
-            chmod 644 /opt/lagrange-onebot/appsettings.json
+        if [[ -f "/opt/lagrange/appsettings.json" ]]; then
+            chmod 644 /opt/lagrange/appsettings.json
         fi
         
         log_success "Lagrange.OneBot 权限修复完成"
@@ -121,8 +121,8 @@ show_permissions() {
     echo
     
     echo "Lagrange.OneBot 目录权限："
-    if [[ -d "/opt/lagrange-onebot" ]]; then
-        ls -la /opt/lagrange-onebot/ | head -10
+    if [[ -d "/opt/lagrange" ]]; then
+        ls -la /opt/lagrange/ | head -10
     else
         echo "  目录不存在"
     fi

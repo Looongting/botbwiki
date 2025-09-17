@@ -7,8 +7,8 @@ Wants=network-online.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/opt/lagrange-onebot
-ExecStart=/opt/lagrange-onebot/Lagrange.OneBot
+WorkingDirectory=/opt/lagrange
+ExecStart=/opt/lagrange/Lagrange.OneBot
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -22,7 +22,7 @@ Environment=DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/opt/lagrange-onebot
+ReadWritePaths=/opt/lagrange
 
 # 资源限制
 MemoryMax=512M

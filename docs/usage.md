@@ -1,6 +1,6 @@
 # 使用说明
 
-本文档聚焦于“怎么用”，部署与配置请参阅 `docs/ubuntu-deployment.md`。
+本文档聚焦于“怎么用”。部署与配置请参阅《Ubuntu 云服务器部署指南》（`docs/ubuntu-deployment.md`）。
 
 ## 前提
 

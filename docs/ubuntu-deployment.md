@@ -50,24 +50,12 @@ pip3 --version
 ### 3. 下载 Lagrange.OneBot Linux 版本
 
 ```bash
-# 创建应用目录
-sudo mkdir -p /opt/lagrange-onebot
-cd /opt/lagrange-onebot
-
-# 下载最新版本 - 使用 Xget 加速下载（推荐）
-# Xget 是一个基于 Cloudflare Workers 的加速服务，域名是 xget.xi-xu.me
-# 使用方法：将 github.com 替换为 xget.xi-xu.me/gh
-wget https://xget.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz
-
-# 或者直接访问 GitHub 下载（非常慢，不要用，除非用户要求）：
-# wget https://github.com/LagrangeDev/Lagrange.Core/releases/download/v1.0.0/Lagrange.OneBot-linux-x64.zip
-
-# 解压
-tar -xzf Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz
-
-# 设置权限
-sudo chmod +x Lagrange.OneBot
-sudo chown -R $USER:$USER /opt/lagrange-onebot
+# 下载并解压到 /opt/lagrange
+cd /opt
+wget https://github.com/LagrangeDev/Lagrange.OneBot/releases/latest/download/Lagrange.OneBot-linux-x64.zip
+unzip Lagrange.OneBot-linux-x64.zip
+sudo mv Lagrange.OneBot-linux-x64 lagrange
+sudo chown -R $USER:$USER /opt/lagrange
 ```
 
 ### 4. 配置 Lagrange.OneBot
@@ -77,16 +65,14 @@ sudo chown -R $USER:$USER /opt/lagrange-onebot
 #### 4.1 启动 Lagrange 生成默认配置
 
 ```bash
-# 进入 Lagrange 目录
-cd /opt/lagrange-onebot/Lagrange.OneBot/bin/Release/net9.0/linux-x64/publish
-
-# 启动 Lagrange（会自动生成 appsettings.json）
+# 首次启动 Lagrange（会自动生成 appsettings.json）
+cd /opt/lagrange
 timeout 5s ./Lagrange.OneBot
 ```
 
 #### 4.2 使用项目配置模板更新配置
 
-根据 [Lagrange 官方文档](https://lagrangedev.github.io/Lagrange.Doc/v1/Lagrange.OneBot/Config/) 和项目配置模板，更新生成的配置文件：
+根据 [Lagrange 官方文档](https://lagrangedev.github.io/Lagrange.Doc/v1/Lagrange.OneBot/Config/) 和项目配置模板，更新生成的配置文件（ForwardWebSocket）：
 
 ```bash
 # 使用项目提供的配置模板更新 appsettings.json
@@ -183,8 +169,8 @@ After=network.target
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/opt/lagrange-onebot
-ExecStart=/opt/lagrange-onebot/Lagrange.OneBot
+WorkingDirectory=/opt/lagrange
+ExecStart=/opt/lagrange/Lagrange.OneBot
 Restart=always
 RestartSec=10
 StandardOutput=journal

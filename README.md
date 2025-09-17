@@ -9,6 +9,33 @@
 - **核心**: LagrangeCore
 - **短链转换**: b23.tv-tools
 
+## 端口配置说明
+
+**重要**：为了避免端口冲突，系统使用以下端口分配：
+
+- **8080端口**：Lagrange.OneBot WebSocket服务器
+  - 提供OneBot v11 WebSocket服务
+  - 路径：`ws://127.0.0.1:8080/onebot/v11/ws`
+  
+- **8081端口**：NoneBot2 HTTP服务器（可选）
+  - 仅用于健康检查和调试
+  - 实际通信通过WebSocket进行
+
+**架构**：QQ机器人作为WebSocket客户端连接到Lagrange.OneBot的8080端口，而不是自己启动HTTP服务器。
+
+## 目录
+
+- [功能特性](#功能特性)
+- [端口配置说明](#端口配置说明)
+- [项目结构](#项目结构)
+- [快速开始](#快速开始)
+  - [新手快速开始（5步）](#新手快速开始5步)
+- [系统服务配置（推荐）](#系统服务配置推荐)
+- [连接状态验证](#连接状态验证)
+- [常见问题解决](#5-常见问题解决)
+- [重新部署指南](#重新部署指南)
+- [更新日志](#更新日志)
+
 ## 功能特性
 
 ### 1. 多Wiki站点短链生成功能
@@ -73,6 +100,47 @@ botbwiki/                       # 机器人项目目录
 
 ## 快速开始
 
+### 新手快速开始（5步）
+
+1. 克隆与安装依赖
+   ```bash
+   git clone <your-repo-url> /home/ubuntu/botbwiki
+   cd /home/ubuntu/botbwiki
+   python3 -m venv venv && source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+2. 复制并编辑环境变量
+   ```bash
+   cp env.example .env
+   # 确保以下关键项：
+   # ONEBOT_WS_URL=ws://127.0.0.1:8080/onebot/v11/ws
+   ```
+3. 安装 Lagrange.OneBot（服务器端）
+   ```bash
+   cd /opt
+   sudo wget https://github.com/LagrangeDev/Lagrange.OneBot/releases/latest/download/Lagrange.OneBot-linux-x64.zip
+   sudo unzip Lagrange.OneBot-linux-x64.zip && sudo mv Lagrange.OneBot-linux-x64 lagrange
+   sudo chown -R ubuntu:ubuntu /opt/lagrange
+   cd /opt/lagrange && sudo -u ubuntu ./Lagrange.OneBot  # 首次运行生成 appsettings.json，随后按 Ctrl+C 退出
+   ```
+4. 配置 Lagrange.OneBot 关键项
+   ```json
+   {
+     "Implementations": [{
+       "Type": "ForwardWebSocket",
+       "Host": "127.0.0.1",
+       "Port": 8080,
+       "Suffix": "/onebot/v11/ws"
+     }]
+   }
+   ```
+5. 作为系统服务运行（推荐）
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable lagrange-onebot.service qq-bot.service
+   sudo systemctl start lagrange-onebot.service qq-bot.service
+   ```
+
 ### 1. 环境准备
 
 - Python 3.8 或更高版本
@@ -82,7 +150,7 @@ botbwiki/                       # 机器人项目目录
   - 或其他 Onebot 实现
 - 网络连接（用于短链生成）
 - **下载加速工具**（可选但推荐）：
-  - [Xget](https://github.com/xixu-me/Xget) - 超高性能的开发者资源访问加速引擎，特别适合下载大型文件
+  - [Xget](https://github.com/xixu-me/Xget) - 加速 GitHub 下载（可选）
 
 ### 部署方式选择
 
@@ -202,11 +270,12 @@ python check_env.py
    ```bash
    # 下载 Lagrange.OneBot 到 /opt 目录
    cd /opt
-   wget "https://xget.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz"
+  wget "https://xget.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz"
    
-   # 解压到 lagrange 目录
-   tar -xzf Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz -C lagrange
-   cd lagrange
+  # 解压到 lagrange 目录
+  unzip Lagrange.OneBot-linux-x64.zip
+  mv Lagrange.OneBot-linux-x64 lagrange
+  cd lagrange
    
    # 设置执行权限
    chmod +x Lagrange.OneBot
@@ -217,7 +286,7 @@ python check_env.py
    # 首次启动会生成配置文件appsettings.json
    # 然后中止进程，先去修改appsettings.json
    # 修改配置后，再次启动，需要扫码登录
-   cd /opt/lagrange
+  cd /opt/lagrange
    ./Lagrange.OneBot
    
    # 看到二维码后，用手机QQ扫描登录
@@ -226,7 +295,7 @@ python check_env.py
 
 3. **关键配置说明**：
    
-   **appsettings.json 配置**：
+   **appsettings.json 配置（关键片段）**：
    ```json
    {
      "SignServerUrl": "https://sign.lagrangecore.org/api/sign/39038",
@@ -245,9 +314,10 @@ python check_env.py
          "Host": "127.0.0.1",
          "Port": 8080,  // 重要：这是 Lagrange 提供的 WebSocket 服务端口
          "Suffix": "/onebot/v11/ws",
+         "HeartBeatEnable": true,
          "ReconnectInterval": 5000,
          "HeartBeatInterval": 5000,
-         "HeartBeatEnable": true
+         "AccessToken": ""
        }
      ]
    }
@@ -265,9 +335,9 @@ python check_env.py
    ONEBOT_WS_URL=ws://127.0.0.1:8080/onebot/v11/ws
    ONEBOT_HTTP_URL=http://127.0.0.1:8080
    
-   # Nonebot2 服务器配置 - 机器人自己的 HTTP 服务端口（避免冲突）
-   HOST=127.0.0.1
-   PORT=8081  # 注意：这里不能是 8080，避免与 Lagrange 冲突
+   # （可选）Nonebot2 服务器配置 - 仅当启用 HTTP 服务时使用
+   # HOST=127.0.0.1
+   # PORT=8081
    ```
 
 5. **常见问题解决**：
@@ -280,15 +350,44 @@ python check_env.py
    - 症状：显示 "All login failed!" 错误
    - 解决：检查 `Account.Uin` 是否正确设置，或重新扫码登录
    
-   **问题3：WebSocket 连接失败**
-   - 症状：Lagrange 显示 "Reconnecting" 循环
-   - 解决：确保机器人服务已启动，且配置的 WebSocket URL 正确
+  **问题3：WebSocket 连接失败**
+  - 症状：Lagrange 日志反复 "Reconnecting"
+  - 排查：
+    - [ ] Lagrange `Type=ForwardWebSocket`、`Port=8080`
+    - [ ] `.env` 的 `ONEBOT_WS_URL` 指向 `ws://127.0.0.1:8080/onebot/v11/ws`
+    - [ ] `bot.py` 使用 `driver="~httpx+~websockets"`
+
+  **问题4：机器人不回复消息**
+  - 症状：服务正常但群里无响应
+  - 排查：
+    - [ ] 日志出现 `Bot 3330219965 connected`
+    - [ ] 插件是否加载成功（日志含 `Succeeded to load plugin`）
+    - [ ] 群聊消息是否符合触发格式
+
+  **问题5：NoneBot 驱动不支持 WebSocket**
+  - 症状：日志提示 `~fastapi does not support websocket client connections`
+  - 解决：在 `bot.py`：
+    ```python
+    nonebot.init(driver="~httpx+~websockets", log_level=os.getenv("LOG_LEVEL", "INFO"))
+    ```
 
 详细部署与配置请参阅 `docs/ubuntu-deployment.md`。
 
 ### 7. 系统服务配置（推荐）
 
 为了确保机器人可以持续运行，不受远程连接影响，建议配置为系统服务：
+
+#### 为什么需要systemd服务？
+
+**问题**：直接运行机器人时，如果SSH连接断开，机器人进程会终止。
+
+**解决方案**：使用systemd系统服务，让机器人作为后台守护进程运行：
+
+1. **独立于用户会话**：服务运行在系统级别，不依赖SSH连接
+2. **自动重启**：配置 `Restart=always`，进程异常退出时自动重启
+3. **开机自启**：配置 `WantedBy=multi-user.target`，系统启动时自动启动
+4. **资源管理**：限制内存和CPU使用，防止资源耗尽
+5. **日志管理**：统一记录到systemd日志，便于排查问题
 
 1. **创建 systemd 服务文件**：
    ```bash
@@ -303,8 +402,8 @@ python check_env.py
    Type=simple
    User=ubuntu
    Group=ubuntu
-   WorkingDirectory=/opt/lagrange
-   ExecStart=/opt/lagrange/Lagrange.OneBot
+   WorkingDirectory=/opt/lagrange-onebot
+   ExecStart=/opt/lagrange-onebot/Lagrange.OneBot
    Restart=always
    RestartSec=10
    StandardOutput=journal
@@ -343,9 +442,9 @@ python check_env.py
    Type=simple
    User=ubuntu
    Group=ubuntu
-   WorkingDirectory=/home/ubuntu/botbwiki
-   Environment=PATH=/home/ubuntu/botbwiki/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-   ExecStart=/bin/bash -c 'cd /home/ubuntu/botbwiki && source venv/bin/activate && python start.py'
+   WorkingDirectory=/opt/qq-bot
+   Environment=PATH=/opt/qq-bot/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+   ExecStart=/opt/qq-bot/venv/bin/python start.py
    Restart=always
    RestartSec=10
    StandardOutput=journal
@@ -403,6 +502,14 @@ python check_env.py
    sudo journalctl -u qq-bot.service -f
    ```
 
+#### 部署后检查清单（Checklist）
+
+- [ ] `.env` 已设置：`ONEBOT_WS_URL=ws://127.0.0.1:8080/onebot/v11/ws`
+- [ ] `/opt/lagrange-onebot/appsettings.json` 中：`"Type": "ForwardWebSocket"`、`"Port": 8080`
+- [ ] `bot.py` 使用 `driver="~httpx+~websockets"`
+- [ ] `lagrange-onebot.service` 与 `qq-bot.service` 均为 `active (running)`
+- [ ] 日志包含：`Connect(...)` 与 `Bot 3330219965 connected`
+
 ### 8. 验证功能
 
 启动成功后，您会看到类似以下的输出：
@@ -415,7 +522,7 @@ python check_env.py
 
 📋 当前配置:
    机器人名称: QQ机器人
-   Onebot WebSocket URL: ws://127.0.0.1:8080/ws
+   Onebot WebSocket URL: ws://127.0.0.1:8080/onebot/v11/ws
    Onebot HTTP URL: http://127.0.0.1:8080
    日志级别: INFO
    日志文件: bot.log
@@ -431,6 +538,148 @@ python check_env.py
 在 QQ 群中测试以下命令：
 - 发送 `gd测试` 测试短链生成功能
 - 发送 `.rand` 测试随机数生成功能
+
+### 连接状态验证
+
+确认机器人正常工作的关键指标：
+
+1. **Lagrange.OneBot 日志**：
+   ```
+   Connect(b5aeefdc-e7dc-480c-9936-74a6b7879ca3)  # 有客户端连接
+   ```
+
+2. **QQ机器人日志**：
+   ```
+   OneBot V11 | Bot 3330219965 connected  # 成功连接
+   ```
+
+3. **服务状态**：
+   ```bash
+   sudo systemctl status lagrange-onebot.service qq-bot.service
+   # 两个服务都应该显示 "Active: active (running)"
+   ```
+
+4. **功能测试**：
+   - 发送 `gd测试` → 应该收到短链
+   - 发送 `.rand` → 应该收到随机数
+
+## 重新部署指南
+
+### 完整重新部署步骤
+
+如果您需要在新的服务器上重新部署，或者当前部署出现问题需要重新配置，请按以下步骤操作：
+
+#### 1. 环境准备
+```bash
+# 更新系统
+sudo apt update && sudo apt upgrade -y
+
+# 安装必要依赖
+sudo apt install -y python3 python3-pip python3-venv git curl wget
+
+# （可选）安装 .NET 运行时（当使用非自包含包时需要；若使用 SelfContained 版本可跳过）
+# wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+# sudo dpkg -i packages-microsoft-prod.deb
+# sudo apt update
+# sudo apt install -y dotnet-runtime-9.0
+```
+
+#### 2. 部署机器人代码
+```bash
+# 克隆项目
+git clone <your-repo-url> /home/ubuntu/botbwiki
+cd /home/ubuntu/botbwiki
+
+# 创建虚拟环境
+python3 -m venv venv
+source venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+```
+
+#### 3. 配置环境变量
+```bash
+# 复制配置文件
+cp env.example .env
+
+# 编辑配置文件（端口配置很重要！）
+nano .env
+# 确保 PORT=8081（不是8080）
+```
+
+#### 4. 部署Lagrange.OneBot
+```bash
+# 下载自包含版本（推荐）
+sudo mkdir -p /opt/lagrange-onebot
+cd /opt/lagrange-onebot
+sudo wget "https://xget.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz"
+sudo tar -xzf Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz
+sudo chmod +x Lagrange.OneBot
+sudo chown -R ubuntu:ubuntu /opt/lagrange-onebot
+
+# 首次启动生成配置
+cd /opt/lagrange
+sudo -u ubuntu ./Lagrange.OneBot
+# 按 Ctrl+C 停止，然后编辑配置文件
+```
+
+#### 5. 配置Lagrange.OneBot
+```bash
+# 编辑配置文件
+sudo nano /opt/lagrange/appsettings.json
+
+# 关键配置项：
+# - "Type": "ForwardWebSocket"（不是 ReverseWebSocket）
+# - "Port": 8080
+# - "Account.Uin": 您的 QQ 号
+```
+
+#### 6. 创建系统服务
+```bash
+# 使用文档中的systemd服务配置
+# 创建两个服务文件：lagrange-onebot.service 和 qq-bot.service
+# 然后启用和启动服务
+sudo systemctl daemon-reload
+sudo systemctl enable lagrange-onebot.service qq-bot.service
+sudo systemctl start lagrange-onebot.service qq-bot.service
+```
+
+#### 7. 验证部署
+```bash
+# 检查服务状态
+sudo systemctl status lagrange-onebot.service qq-bot.service
+
+# 查看日志
+sudo journalctl -u lagrange-onebot.service -f
+sudo journalctl -u qq-bot.service -f
+
+# 测试功能
+# 在QQ群中发送：gd测试 或 .rand
+```
+
+### 关键配置要点
+
+1. **端口配置**：
+   - **Lagrange.OneBot**：8080端口（WebSocket服务器）
+     - 在 `appsettings.json` 中配置：`"Port": 8080`
+     - 提供OneBot v11 WebSocket服务
+   - **QQ机器人**：8081端口（HTTP服务器，仅用于调试）
+     - 在 `.env` 文件中配置：`PORT=8081`
+     - 实际通信通过WebSocket连接到Lagrange
+   - **重要**：两个服务不能使用相同端口，避免冲突
+
+2. **WebSocket配置**：
+   - Lagrange：`"Type": "ForwardWebSocket"`
+   - NoneBot：`driver="~httpx+~websockets"`
+
+3. **服务依赖**：
+   - QQ机器人服务依赖Lagrange.OneBot服务
+   - 确保启动顺序正确
+
+4. **权限配置**：
+   - 使用ubuntu用户运行服务
+   - 设置正确的文件权限
 
 ## 开发说明
 
@@ -472,6 +721,13 @@ python verify_config.py
 
 ## 更新日志
 
+- v1.1.9: 成功解决WebSocket连接问题
+  - 修复了 Lagrange.OneBot 的 WebSocket 配置（ForwardWebSocket）
+  - 解决了 NoneBot2 驱动配置问题（使用 ~httpx+~websockets）
+  - 成功建立机器人连接，Bot 3330219965 已连接
+  - 验证了完整的消息收发功能
+  - 更新了故障排除指南和连接验证方法
+
 - v1.1.8: 完善配置文档和端口说明
   - 详细说明了 Lagrange.OneBot 的配置流程和关键配置项
   - 添加了端口配置说明，明确架构和避免冲突的方法
@@ -481,7 +737,7 @@ python verify_config.py
   - 提供了详细的服务管理命令
 - v1.1.7: 优化目录结构和清理重复文件
   - 清理了/opt目录下的重复Lagrange.OneBot安装
-  - 将成功的配置移动到简洁的/opt/lagrange路径
+  - 将成功的配置移动到简洁的 /opt/lagrange-onebot 路径
   - 更新了systemd服务配置，使用新的简化路径
   - 删除了不必要的重复目录，节省磁盘空间
   - 保持了所有功能的正常运行

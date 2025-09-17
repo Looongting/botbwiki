@@ -2,7 +2,9 @@
   "$schema": "https://raw.githubusercontent.com/LagrangeDev/Lagrange.Core/master/Lagrange.OneBot/Resources/appsettings_schema.json",
   "Logging": {
     "LogLevel": {
-      "Default": "Information"
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
     }
   },
   "SignServerUrl": "https://sign.lagrangecore.org/api/sign/39038",
@@ -24,12 +26,13 @@
   },
   "Implementations": [
     {
-      "Type": "ReverseWebSocket",
+      "Type": "ForwardWebSocket",
       "Host": "127.0.0.1",
       "Port": 8080,
       "Suffix": "/onebot/v11/ws",
       "ReconnectInterval": 5000,
       "HeartBeatInterval": 5000,
+      "HeartBeatEnable": true,
       "AccessToken": ""
     }
   ]

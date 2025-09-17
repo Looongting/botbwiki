@@ -86,28 +86,19 @@ install_python() {
 
 # 下载 Lagrange.OneBot
 download_lagrange() {
-    log_info "下载 Lagrange.OneBot Linux 版本..."
+    log_info "下载 Lagrange.OneBot 自包含版本..."
     
     # 创建目录
-    sudo mkdir -p /opt/lagrange-onebot
-    cd /opt/lagrange-onebot
-    
-    # 获取最新版本号 (这里需要手动更新或使用 API)
-    LAGRANGE_VERSION="1.0.0"  # 请替换为实际的最新版本
-    
-    # 下载文件
-    DOWNLOAD_URL="https://github.com/LagrangeDev/Lagrange.Core/releases/download/v${LAGRANGE_VERSION}/Lagrange.OneBot-linux-x64.zip"
-    
+    cd /opt
+    DOWNLOAD_URL="https://github.com/LagrangeDev/Lagrange.OneBot/releases/latest/download/Lagrange.OneBot-linux-x64.zip"
     log_info "正在下载: $DOWNLOAD_URL"
-    wget -O lagrange.zip "$DOWNLOAD_URL"
-    
-    # 解压
-    unzip lagrange.zip
-    rm lagrange.zip
+    wget -O Lagrange.OneBot-linux-x64.zip "$DOWNLOAD_URL"
+    unzip Lagrange.OneBot-linux-x64.zip
+    sudo mv Lagrange.OneBot-linux-x64 lagrange
     
     # 设置权限
-    sudo chmod +x Lagrange.OneBot
-    sudo chown -R $USER:$USER /opt/lagrange-onebot
+    sudo chmod +x /opt/lagrange/Lagrange.OneBot
+    sudo chown -R $USER:$USER /opt/lagrange
     
     log_success "Lagrange.OneBot 下载完成"
 }
@@ -116,7 +107,7 @@ download_lagrange() {
 configure_lagrange() {
     log_info "配置 Lagrange.OneBot..."
     
-    cat > /opt/lagrange-onebot/appsettings.json << 'EOF'
+    cat > /opt/lagrange/appsettings.json << 'EOF'
 {
   "$schema": "https://raw.githubusercontent.com/LagrangeDev/Lagrange.Core/master/Lagrange.OneBot/Resources/appsettings_schema.json",
   "Logging": {
@@ -124,7 +115,7 @@ configure_lagrange() {
       "Default": "Information"
     }
   },
-  "SignServerUrl": "https://sign.lagrangecore.org/api/sign/30366",
+  "SignServerUrl": "https://sign.lagrangecore.org/api/sign/39038",
   "SignProxyUrl": "",
   "MusicSignServerUrl": "",
   "Account": {
@@ -143,7 +134,7 @@ configure_lagrange() {
   },
   "Implementations": [
     {
-      "Type": "ReverseWebSocket",
+      "Type": "ForwardWebSocket",
       "Host": "127.0.0.1",
       "Port": 8080,
       "Suffix": "/onebot/v11/ws",
