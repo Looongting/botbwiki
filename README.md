@@ -28,33 +28,47 @@
 ## 项目结构
 
 ```
-bot/
-├── README.md                    # 项目说明文档
-├── pyproject.toml              # 项目配置文件
-├── requirements.txt            # Python依赖包
-├── .env.example                # 环境变量示例
-├── .gitignore                  # Git忽略文件
-├── start.py                    # 机器人启动脚本
-├── bot.py                      # 机器人主程序
-├── config.py                   # 配置文件
-├── check_env.py                # 环境检查脚本
-├── verify_config.py            # 配置验证脚本
+botbwiki/                       # 机器人项目目录
+├── README.md                   # 项目说明文档
+├── pyproject.toml             # 项目配置文件
+├── requirements.txt           # Python依赖包
+├── .env                       # 环境变量配置（需要创建）
+├── .env.example               # 环境变量示例
+├── .gitignore                 # Git忽略文件
+├── start.py                   # 机器人启动脚本
+├── bot.py                     # 机器人主程序
+├── config.py                  # 配置文件
+├── check_env.py               # 环境检查脚本
+├── verify_config.py           # 配置验证脚本
 ├── lagrange-config-template.json # Lagrange配置模板
-├── plugins/                    # 插件目录
+├── activate.sh                # Linux 环境激活脚本
+├── start.sh                   # Linux 一键启动脚本
+├── install.sh                 # Linux 一键安装脚本
+├── plugins/                   # 插件目录
 │   ├── __init__.py
-│   ├── shortlink.py            # 多Wiki站点短链生成插件
-│   └── random.py               # 随机数生成插件
-├── docs/                       # 文档目录
-│   └── ubuntu-deployment.md    # Ubuntu云服务器部署指南（唯一权威部署文档）
-├── scripts/                    # 部署脚本目录
-│   ├── install-ubuntu.sh       # Ubuntu一键部署脚本
-│   └── fix-permissions.sh      # 权限修复脚本
-├── systemd-service-templates/  # 系统服务模板目录
+│   ├── shortlink.py           # 多Wiki站点短链生成插件
+│   └── random.py              # 随机数生成插件
+├── docs/                      # 文档目录
+│   └── ubuntu-deployment.md   # Ubuntu云服务器部署指南
+├── scripts/                   # 部署脚本目录
+│   ├── install-ubuntu.sh      # Ubuntu一键部署脚本
+│   └── fix-permissions.sh     # 权限修复脚本
+├── systemd-service-templates/ # 系统服务模板目录
 │   ├── lagrange-onebot.service # Lagrange.OneBot服务模板
-│   └── qq-bot.service          # QQ机器人服务模板
-└── Lagrange.OneBot/            # OneBot实现（需要单独下载）
-    └── bin/Release/net9.0/win-x64/
-        └── Lagrange.OneBot.exe
+│   └── qq-bot.service         # QQ机器人服务模板
+└── venv/                      # Python虚拟环境
+
+/opt/lagrange/                 # Lagrange.OneBot 安装目录
+├── Lagrange.OneBot            # 可执行文件
+├── appsettings.json           # 配置文件
+├── device.json                # 设备信息
+├── keystore.json              # 登录凭据
+├── lagrange-0-db/             # 数据库目录
+└── qr-0.png                   # 二维码文件（登录时生成）
+
+/etc/systemd/system/           # 系统服务配置
+├── lagrange-onebot.service    # Lagrange.OneBot 系统服务
+└── qq-bot.service             # QQ机器人系统服务
 ```
 
 ## 快速开始
@@ -72,7 +86,7 @@ bot/
 
 ### 部署方式选择
 
-#### 本地部署（Windows）
+#### 本地部署（Linux）
 适合个人使用，配置简单，适合初学者。
 
 #### 云服务器部署（Ubuntu）
@@ -102,20 +116,28 @@ bash scripts/fix-permissions.sh --show
 
 ### 2. 创建虚拟环境并安装依赖
 
+#### 方法一：一键安装（推荐）
+
 ```bash
 # 克隆项目（如果从 Git 获取）
 git clone <repository-url>
-cd bot
+cd botbwiki
+
+# 运行一键安装脚本
+./install.sh
+```
+
+#### 方法二：手动安装
+
+```bash
+# 克隆项目（如果从 Git 获取）
+git clone <repository-url>
+cd botbwiki
 
 # 创建 Python 虚拟环境
-python -m venv venv
+python3 -m venv venv
 
-# 激活虚拟环境
-# Windows (PowerShell):
-venv\Scripts\activate
-# Windows (CMD):
-venv\Scripts\activate.bat
-# Linux/Mac:
+# 激活虚拟环境（必须使用 source 命令）
 source venv/bin/activate
 
 # 升级 pip
@@ -125,12 +147,15 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-#### 快速激活脚本
+#### 快速启动脚本
 
-项目提供了便捷的激活脚本：
+项目提供了便捷的 Linux 脚本：
 
-- **Windows CMD**: 双击 `activate.bat`
-- **Windows PowerShell**: 运行 `.\activate.ps1`
+- **一键启动**: `./start.sh` - 自动激活环境并启动机器人
+- **环境激活**: `source ./activate.sh` - 激活虚拟环境（必须使用 source 命令）
+- **一键安装**: `./install.sh` - 自动安装所有依赖
+
+**重要提醒**：激活虚拟环境时必须使用 `source ./activate.sh` 或 `. ./activate.sh`，直接运行 `./activate.sh` 无法在当前shell中激活虚拟环境。
 
 ### 3. 配置环境
 
@@ -144,12 +169,17 @@ cp env.example .env
 
 ### 4. 启动机器人
 
-#### 方式一：使用启动脚本（推荐）
+#### 方式一：使用一键启动脚本（推荐）
+```bash
+./start.sh
+```
+
+#### 方式二：使用启动脚本
 ```bash
 python start.py
 ```
 
-#### 方式二：直接启动
+#### 方式三：直接启动
 ```bash
 python bot.py
 ```
@@ -168,34 +198,212 @@ python check_env.py
 
 #### 使用 Lagrange.OneBot（推荐）
 
-1. **下载最新版本**：
+1. **下载和安装**：
    ```bash
-   # 由于 Lagrange 文件较大，推荐使用 Xget 加速下载
-   # 使用 Xget 加速下载最新 nightly 版本（推荐）：
-   wget "https://xuc.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz"
+   # 下载 Lagrange.OneBot 到 /opt 目录
+   cd /opt
+   wget "https://xget.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz"
    
-   # 或者直接访问 GitHub 下载（可能较慢）：
-   # https://github.com/LagrangeDev/Lagrange.Core/releases
+   # 解压到 lagrange 目录
+   tar -xzf Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz -C lagrange
+   cd lagrange
+   
+   # 设置执行权限
+   chmod +x Lagrange.OneBot
    ```
 
-2. **配置文件**：
+2. **首次配置和登录**：
    ```bash
-   # 使用项目提供的配置模板
-   cp lagrange-config-template.json /path/to/lagrange/appsettings.json
+   # 首次启动会生成配置文件appsettings.json
+   # 然后中止进程，先去修改appsettings.json
+   # 修改配置后，再次启动，需要扫码登录
+   cd /opt/lagrange
+   ./Lagrange.OneBot
    
-   # 编辑配置文件，设置QQ号码
-   vim /path/to/lagrange/appsettings.json
+   # 看到二维码后，用手机QQ扫描登录
+   # 登录成功后按 Ctrl+C 停止程序
    ```
 
-3. **关键配置项**：
-   - `Account.Uin`: 设置为您的QQ号码
-   - `SignServerUrl`: 已配置为官方服务器 `https://sign.lagrangecore.org/api/sign/30366`
-   - `ConsoleCompatibilityMode`: 云服务器部署设为 `true`
-   - `HeartBeatEnable`: 必须设为 `true` 保持连接稳定
+3. **关键配置说明**：
+   
+   **appsettings.json 配置**：
+   ```json
+   {
+     "SignServerUrl": "https://sign.lagrangecore.org/api/sign/39038",
+     "Account": {
+       "Uin": 0,  // 登录后会自动设置为您的QQ号
+       "Protocol": "Linux",
+       "AutoReconnect": true,
+       "GetOptimumServer": true
+     },
+     "QrCode": {
+       "ConsoleCompatibilityMode": false  // 云服务器建议设为 true
+     },
+     "Implementations": [
+       {
+         "Type": "ForwardWebSocket",
+         "Host": "127.0.0.1",
+         "Port": 8080,  // 重要：这是 Lagrange 提供的 WebSocket 服务端口
+         "Suffix": "/onebot/v11/ws",
+         "ReconnectInterval": 5000,
+         "HeartBeatInterval": 5000,
+         "HeartBeatEnable": true
+       }
+     ]
+   }
+   ```
+
+4. **端口配置说明**：
+   
+   **正确的架构**：
+   - **Lagrange.OneBot**：作为 QQ 客户端，在 8080 端口提供 WebSocket 服务
+   - **QQ机器人（NoneBot）**：作为 WebSocket 客户端，连接到 Lagrange 的 8080 端口
+   
+   **环境变量配置**（.env 文件）：
+   ```bash
+   # Onebot 连接配置 - 连接到 Lagrange 的 WebSocket 服务
+   ONEBOT_WS_URL=ws://127.0.0.1:8080/onebot/v11/ws
+   ONEBOT_HTTP_URL=http://127.0.0.1:8080
+   
+   # Nonebot2 服务器配置 - 机器人自己的 HTTP 服务端口（避免冲突）
+   HOST=127.0.0.1
+   PORT=8081  # 注意：这里不能是 8080，避免与 Lagrange 冲突
+   ```
+
+5. **常见问题解决**：
+   
+   **问题1：端口冲突**
+   - 症状：Lagrange 启动失败或机器人无法连接
+   - 解决：确保 Lagrange 使用 8080 端口，机器人使用 8081 端口
+   
+   **问题2：登录失败**
+   - 症状：显示 "All login failed!" 错误
+   - 解决：检查 `Account.Uin` 是否正确设置，或重新扫码登录
+   
+   **问题3：WebSocket 连接失败**
+   - 症状：Lagrange 显示 "Reconnecting" 循环
+   - 解决：确保机器人服务已启动，且配置的 WebSocket URL 正确
 
 详细部署与配置请参阅 `docs/ubuntu-deployment.md`。
 
-### 7. 验证功能
+### 7. 系统服务配置（推荐）
+
+为了确保机器人可以持续运行，不受远程连接影响，建议配置为系统服务：
+
+1. **创建 systemd 服务文件**：
+   ```bash
+   # Lagrange.OneBot 服务
+   sudo tee /etc/systemd/system/lagrange-onebot.service > /dev/null << 'EOF'
+   [Unit]
+   Description=Lagrange.OneBot Service
+   After=network.target
+   Wants=network-online.target
+
+   [Service]
+   Type=simple
+   User=ubuntu
+   Group=ubuntu
+   WorkingDirectory=/opt/lagrange
+   ExecStart=/opt/lagrange/Lagrange.OneBot
+   Restart=always
+   RestartSec=10
+   StandardOutput=journal
+   StandardError=journal
+   SyslogIdentifier=lagrange-onebot
+
+   # 环境变量
+   Environment=DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+   Environment=DOTNET_BUNDLE_EXTRACT_BASE_DIR=/tmp/lagrange-extract
+
+   # 安全设置
+   NoNewPrivileges=false
+   ProtectSystem=false
+   ProtectHome=false
+
+   # 资源限制
+   MemoryMax=512M
+   TasksMax=100
+
+   [Install]
+   WantedBy=multi-user.target
+   EOF
+   ```
+
+2. **QQ机器人服务**：
+   ```bash
+   # QQ机器人服务
+   sudo tee /etc/systemd/system/qq-bot.service > /dev/null << 'EOF'
+   [Unit]
+   Description=QQ Bot Service
+   After=network.target lagrange-onebot.service
+   Wants=network-online.target
+   Requires=lagrange-onebot.service
+
+   [Service]
+   Type=simple
+   User=ubuntu
+   Group=ubuntu
+   WorkingDirectory=/home/ubuntu/botbwiki
+   Environment=PATH=/home/ubuntu/botbwiki/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+   ExecStart=/bin/bash -c 'cd /home/ubuntu/botbwiki && source venv/bin/activate && python start.py'
+   Restart=always
+   RestartSec=10
+   StandardOutput=journal
+   StandardError=journal
+   SyslogIdentifier=qq-bot
+
+   # 安全设置
+   NoNewPrivileges=false
+   ProtectSystem=false
+   ProtectHome=false
+
+   # 资源限制
+   MemoryMax=256M
+   TasksMax=50
+
+   [Install]
+   WantedBy=multi-user.target
+   EOF
+   ```
+
+3. **启用和启动服务**：
+   ```bash
+   # 重新加载 systemd 配置
+   sudo systemctl daemon-reload
+   
+   # 启用开机自启
+   sudo systemctl enable lagrange-onebot.service
+   sudo systemctl enable qq-bot.service
+   
+   # 启动服务
+   sudo systemctl start lagrange-onebot.service
+   sudo systemctl start qq-bot.service
+   
+   # 检查服务状态
+   sudo systemctl status lagrange-onebot.service
+   sudo systemctl status qq-bot.service
+   ```
+
+4. **服务管理命令**：
+   ```bash
+   # 查看服务状态
+   sudo systemctl status lagrange-onebot.service
+   sudo systemctl status qq-bot.service
+   
+   # 重启服务
+   sudo systemctl restart lagrange-onebot.service
+   sudo systemctl restart qq-bot.service
+   
+   # 停止服务
+   sudo systemctl stop lagrange-onebot.service
+   sudo systemctl stop qq-bot.service
+   
+   # 查看服务日志
+   sudo journalctl -u lagrange-onebot.service -f
+   sudo journalctl -u qq-bot.service -f
+   ```
+
+### 8. 验证功能
 
 启动成功后，您会看到类似以下的输出：
 ```
@@ -264,6 +472,37 @@ python verify_config.py
 
 ## 更新日志
 
+- v1.1.8: 完善配置文档和端口说明
+  - 详细说明了 Lagrange.OneBot 的配置流程和关键配置项
+  - 添加了端口配置说明，明确架构和避免冲突的方法
+  - 提供了完整的 systemd 服务配置示例
+  - 添加了常见问题的解决方案
+  - 更新了项目结构说明，反映清理后的目录布局
+  - 提供了详细的服务管理命令
+- v1.1.7: 优化目录结构和清理重复文件
+  - 清理了/opt目录下的重复Lagrange.OneBot安装
+  - 将成功的配置移动到简洁的/opt/lagrange路径
+  - 更新了systemd服务配置，使用新的简化路径
+  - 删除了不必要的重复目录，节省磁盘空间
+  - 保持了所有功能的正常运行
+- v1.1.6: 完善systemd服务部署
+  - 修复了systemd服务配置中的权限问题
+  - 解决了Lagrange.OneBot的DOTNET_BUNDLE_EXTRACT_BASE_DIR环境变量问题
+  - 优化了QQ机器人服务的启动方式，使用bash脚本确保虚拟环境正确激活
+  - 两个服务现在都可以作为系统服务正常运行，支持开机自启
+  - 机器人现在可以持续运行，不受远程连接状态影响
+- v1.1.5: 修复虚拟环境激活脚本
+  - 修复 `activate.sh` 脚本无法在当前shell中激活虚拟环境的问题
+  - 添加执行方式检测，提示用户使用正确的 `source` 命令
+  - 更新文档说明，明确激活虚拟环境的正确方式
+  - 改进用户体验，避免常见的激活失败问题
+- v1.1.4: Linux 兼容性改进
+  - 添加 Linux 一键安装脚本 `install.sh`
+  - 添加 Linux 一键启动脚本 `start.sh`
+  - 添加 Linux 环境激活脚本 `activate.sh`
+  - 移除 Windows 专用脚本，全面支持 Linux 环境
+  - 更新文档，优化 Linux 部署体验
+  - 改进脚本错误处理和用户提示
 - v1.1.3: 优化 Lagrange 下载体验
   - 添加 Xget 加速下载支持，解决 Lagrange 文件较大下载缓慢的问题
   - 更新下载说明，使用最新的 nightly 版本和 Xget 加速链接

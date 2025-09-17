@@ -15,8 +15,7 @@ load_dotenv()
 
 # 初始化 Nonebot
 nonebot.init(
-    host=os.getenv("HOST", "127.0.0.1"),
-    port=int(os.getenv("PORT", "8080")),
+    driver="~httpx+~websockets",
     log_level=os.getenv("LOG_LEVEL", "INFO")
 )
 

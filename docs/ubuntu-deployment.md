@@ -54,11 +54,16 @@ pip3 --version
 sudo mkdir -p /opt/lagrange-onebot
 cd /opt/lagrange-onebot
 
-# 下载最新版本 (请替换为实际的最新版本号)
-wget https://github.com/LagrangeDev/Lagrange.Core/releases/download/v1.0.0/Lagrange.OneBot-linux-x64.zip
+# 下载最新版本 - 使用 Xget 加速下载（推荐）
+# Xget 是一个基于 Cloudflare Workers 的加速服务，域名是 xget.xi-xu.me
+# 使用方法：将 github.com 替换为 xget.xi-xu.me/gh
+wget https://xget.xi-xu.me/gh/LagrangeDev/Lagrange.Core/releases/download/nightly/Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz
+
+# 或者直接访问 GitHub 下载（非常慢，不要用，除非用户要求）：
+# wget https://github.com/LagrangeDev/Lagrange.Core/releases/download/v1.0.0/Lagrange.OneBot-linux-x64.zip
 
 # 解压
-unzip Lagrange.OneBot-linux-x64.zip
+tar -xzf Lagrange.OneBot_linux-x64_net9.0_SelfContained.tar.gz
 
 # 设置权限
 sudo chmod +x Lagrange.OneBot
@@ -67,58 +72,53 @@ sudo chown -R $USER:$USER /opt/lagrange-onebot
 
 ### 4. 配置 Lagrange.OneBot
 
-根据 [Lagrange 官方文档](https://lagrangedev.github.io/Lagrange.Doc/v1/Lagrange.OneBot/Config/)，创建正确的配置文件：
+**重要说明**：Lagrange.OneBot 需要先启动一次来生成默认配置文件，然后使用项目提供的配置模板进行更新。
+
+#### 4.1 启动 Lagrange 生成默认配置
 
 ```bash
-# 创建配置文件
-cat > /opt/lagrange-onebot/appsettings.json << 'EOF'
-{
-    "$schema": "https://raw.githubusercontent.com/LagrangeDev/Lagrange.Core/master/Lagrange.OneBot/Resources/appsettings_schema.json",
-    "Logging": {
-        "LogLevel": {
-            "Default": "Information"
-        }
-    },
-    "SignServerUrl": "https://sign.lagrangecore.org/api/sign/30366",
-    "SignProxyUrl": "",
-    "MusicSignServerUrl": "",
-    "Account": {
-        "Uin": 0,
-        "Password": "",
-        "Protocol": "Linux",
-        "AutoReconnect": true,
-        "GetOptimumServer": true
-    },
-    "Message": {
-        "IgnoreSelf": true,
-        "StringPost": false
-    },
-    "QrCode": {
-        "ConsoleCompatibilityMode": true
-    },
-    "Implementations": [
-        {
-            "Type": "ReverseWebSocket",
-            "Host": "127.0.0.1",
-            "Port": 8080,
-            "Suffix": "/onebot/v11/ws",
-            "ReconnectInterval": 5000,
-            "HeartBeatInterval": 5000,
-            "HeartBeatEnable": true,
-            "AccessToken": ""
-        }
-    ]
-}
-EOF
+# 进入 Lagrange 目录
+cd /opt/lagrange-onebot/Lagrange.OneBot/bin/Release/net9.0/linux-x64/publish
+
+# 启动 Lagrange（会自动生成 appsettings.json）
+timeout 5s ./Lagrange.OneBot
+```
+
+#### 4.2 使用项目配置模板更新配置
+
+根据 [Lagrange 官方文档](https://lagrangedev.github.io/Lagrange.Doc/v1/Lagrange.OneBot/Config/) 和项目配置模板，更新生成的配置文件：
+
+```bash
+# 使用项目提供的配置模板更新 appsettings.json
+# 主要需要更新的配置项：
+
+# 1. 设置官方签名服务器
+sed -i 's/"SignServerUrl": ""/"SignServerUrl": "https:\/\/sign.lagrangecore.org\/api\/sign\/39038"/' appsettings.json
+
+# 2. 启用控制台兼容模式（云服务器部署必需）
+sed -i 's/"ConsoleCompatibilityMode": false/"ConsoleCompatibilityMode": true/' appsettings.json
+
+# 3. 启用心跳检测
+sed -i '/"HeartBeatInterval": 5000,/a\            "HeartBeatEnable": true,' appsettings.json
 ```
 
 **重要配置说明**：
-- `SignServerUrl`: 必须设置为官方签名服务器
-- `ConsoleCompatibilityMode`: 服务器部署设置为 `true`
-- `HeartBeatEnable`: 必须设置为 `true`
+- `SignServerUrl`: 必须设置为官方签名服务器 `https://sign.lagrangecore.org/api/sign/39038`
+- `ConsoleCompatibilityMode`: 云服务器部署默认设置为 `false`，当二维码无法正常显示再改为true的兼容模式
+- `HeartBeatEnable`: 必须设置为 `true` 保持连接稳定
 - `Host`: 使用 `127.0.0.1` 而非 `0.0.0.0`（安全考虑）
 
+#### 4.3 验证配置
+
+```bash
+# 使用项目提供的配置验证脚本
+cd /home/ubuntu/botbwiki
+python3 verify_config.py
+```
+
 ### 5. 部署 Python 机器人
+
+**重要提醒：所有Python相关操作都必须在虚拟环境中进行，避免污染系统环境！**
 
 ```bash
 # 创建机器人目录
@@ -132,11 +132,17 @@ cd /opt/qq-bot
 # 方法2: 使用 scp 上传本地代码
 # scp -r /path/to/local/bot user@server:/opt/qq-bot/
 
-# 创建虚拟环境
+# 创建虚拟环境（必须！）
 python3 -m venv venv
+
+# 激活虚拟环境（必须！）
 source venv/bin/activate
 
-# 安装依赖
+# 验证虚拟环境（应该显示虚拟环境路径）
+which python
+which pip
+
+# 安装依赖（在虚拟环境中）
 pip install -r requirements.txt
 ```
 
