@@ -30,9 +30,9 @@ def is_shortlink_command() -> Rule:
     """检查是否为短链生成命令"""
     def _check(event: GroupMessageEvent) -> bool:
         message = str(event.get_message()).strip()
-        # 检查是否以配置的关键字开头
+        # 检查是否以配置的关键字开头（允许只发送关键字）
         for prefix in config.WIKI_CONFIGS.keys():
-            if message.startswith(prefix) and len(message) > len(prefix):
+            if message.startswith(prefix):
                 return True
         return False
     
@@ -54,7 +54,7 @@ async def handle_shortlink(bot: Bot, event: GroupMessageEvent):
         wiki_config = None
         prefix = None
         for p in config.WIKI_CONFIGS.keys():
-            if message.startswith(p) and len(message) > len(p):
+            if message.startswith(p):
                 prefix = p
                 wiki_config = config.WIKI_CONFIGS[p]
                 break
@@ -63,12 +63,15 @@ async def handle_shortlink(bot: Bot, event: GroupMessageEvent):
             await shortlink_handler.finish("不支持的关键字，请使用配置的关键字")
             return
         
-        # 提取检索词（去掉前缀）
-        search_term = message[len(prefix):].strip()
+        # 提取检索词（去掉前缀，只取第一行内容）
+        full_content = message[len(prefix):]
+        # 只取第一行内容作为页面名字，忽略换行后的内容
+        search_term = full_content.split('\n')[0].strip()
         
+        # 如果第一行没有内容，默认查找首页
         if not search_term:
-            await shortlink_handler.finish(f"请输入有效的检索词，格式：{prefix}检索词")
-            return
+            search_term = "首页"
+            logger.info(f"关键字后无内容，默认查找首页: {search_term}")
         
         # 构建完整 URL
         full_url = f"{wiki_config['url']}/{search_term}"
@@ -88,9 +91,9 @@ async def handle_shortlink(bot: Bot, event: GroupMessageEvent):
         
         # 准备回复消息
         if short_url:
-            reply_message = f"短链生成成功：\n{short_url}"
+            reply_message = f"{search_term}：{short_url}"
         else:
-            reply_message = f"短链生成失败，请直接访问：\n{full_url}"
+            reply_message = f"{search_term}：{full_url}"
         
         # 发送回复消息
         await shortlink_handler.finish(reply_message)
@@ -100,17 +103,7 @@ async def handle_shortlink(bot: Bot, event: GroupMessageEvent):
         if "FinishedException" in str(type(e)):
             return
         logger.error(f"短链生成插件错误: {e}")
-        try:
-            # 提供原始链接作为回退
-            message = str(event.get_message()).strip()
-            search_term = message[1:].strip()
-            if search_term:
-                full_url = f"https://wiki.biligame.com/mistria/{search_term}"
-                await shortlink_handler.finish(f"短链生成过程中出现错误，请直接访问：\n{full_url}")
-            else:
-                await shortlink_handler.finish("短链生成过程中出现错误，请稍后重试")
-        except:
-            pass  # 如果已经 finish 过了，忽略错误
+        # 不再发送额外的错误消息，避免重复发送
 
 
 async def generate_short_url(url: str) -> Optional[str]:
@@ -230,7 +223,7 @@ async def create_curid_redirect_url(page_title: str, wiki_config: dict) -> Optio
     curid = await get_page_curid(page_title, wiki_config)
     if curid:
         # 直接返回带curid的URL，这样更简单可靠
-        curid_url = f"{wiki_config['url']}/index.php?curid={curid}"
+        curid_url = f"{wiki_config['url']}/?curid={curid}"
         logger.info(f"创建curid跳转URL: {curid_url}")
         return curid_url
     

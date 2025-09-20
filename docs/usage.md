@@ -17,8 +17,8 @@
 ## 使用示例
 
 ```text
-gd沈星回
-m瓦伦
+gd沈星回   # 机器人回复：沈星回：https://wiki.biligame.com/lysk/?curid=xxxx
+m瓦伦     # 机器人回复：瓦伦：https://wiki.biligame.com/mistria/?curid=xxxx
 .rand
 .randrange 1 50
 ```
@@ -47,5 +47,6 @@ tail -n 200 bot.log
 
 3) 指令报错
 - 确认格式：`gd词`、`m词`、`.rand`、`.randrange A B`
+- 回复格式：`检索词：链接`
 
 —— 完 ——

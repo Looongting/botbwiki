@@ -45,10 +45,15 @@ class Config:
             "api_url": "https://wiki.biligame.com/lysk/api.php",
             "name": "恋与深空WIKI"
         },
-        "m": {
+        "?m": {
             "url": "https://wiki.biligame.com/mistria", 
             "api_url": "https://wiki.biligame.com/mistria/api.php",
             "name": "米斯特利亚WIKI"
+        },
+        "?t": {
+            "url": "https://wiki.biligame.com/tools",
+            "api_url": "https://wiki.biligame.com/tools/api.php",
+            "name": "tools"
         }
     }
 
