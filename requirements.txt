@@ -1,21 +1,49 @@
-# Nonebot2 核心依赖
-nonebot2[fastapi]>=2.0.0
-nonebot-adapter-onebot>=2.0.0
-
-# HTTP 请求库
-httpx>=0.24.0
-
-# 数据验证
-pydantic>=1.10.0
-
-# 环境变量管理
-python-dotenv>=1.0.0
-
-# 日志增强（可选）
-loguru>=0.6.0
-
-# 开发依赖（可选）
-pytest>=7.0.0
-black>=22.0.0
-isort>=5.0.0
-flake8>=5.0.0
+annotated-types==0.7.0
+anyio==4.10.0
+black==25.1.0
+certifi==2025.8.3
+click==8.2.1
+exceptiongroup==1.3.0
+fastapi==0.116.2
+flake8==7.3.0
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.6.4
+httpx==0.28.1
+idna==3.10
+iniconfig==2.1.0
+isort==6.0.1
+loguru==0.7.3
+mccabe==0.7.0
+msgpack==1.1.1
+multidict==6.6.4
+mypy_extensions==1.1.0
+nonebot-adapter-onebot==2.4.6
+nonebot2==2.4.3
+packaging==25.0
+pathspec==0.12.1
+platformdirs==4.4.0
+pluggy==1.6.0
+propcache==0.3.2
+pycodestyle==2.14.0
+pydantic==2.11.8
+pydantic_core==2.33.2
+pyflakes==3.4.0
+Pygments==2.19.2
+pygtrie==2.5.0
+pytest==8.4.2
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+PyYAML==6.0.2
+six==1.17.0
+sniffio==1.3.1
+starlette==0.48.0
+typing-inspection==0.4.1
+typing_extensions==4.15.0
+urllib3==2.5.0
+uvicorn==0.35.0
+uvloop==0.21.0
+volcengine-python-sdk==4.0.21
+watchfiles==1.1.0
+websockets==15.0.1
+yarl==1.20.1

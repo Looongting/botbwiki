@@ -16,7 +16,8 @@ load_dotenv()
 # 初始化 Nonebot
 nonebot.init(
     driver="~httpx+~websockets",
-    log_level=os.getenv("LOG_LEVEL", "INFO")
+    log_level=os.getenv("LOG_LEVEL", "INFO"),
+    command_start={"?", "."}  # 设置命令前缀为?和.（兼容）
 )
 
 # 注册适配器
