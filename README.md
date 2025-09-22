@@ -21,9 +21,9 @@
   - **系统**：Ubuntu Server 18.04.1 LTS 或更高版本
 
 ## 立即开始
-- 从零到一（Ubuntu 单页教程）：`docs/v2/zero-to-one-ubuntu.md`
-- 故障排查（5 分钟定位）：`docs/v2/troubleshooting.md`
-- 群内使用说明：`docs/v2/usage.md`
+- 从零到一（Ubuntu 单页教程）：`docs/zero-to-one-ubuntu.md`
+- 故障排查（5 分钟定位）：`docs/troubleshooting.md`
+- 群内使用说明：`docs/usage.md`
 
 ## 技术栈
 
@@ -102,11 +102,3 @@ python verify_config.py
 3. **定期更新**：保持系统和依赖包更新
 4. **备份配置**：定期备份配置文件和数据库
 5. **权限管理**：确保文件权限正确，避免权限问题
-
-## TODO（待确认事项）
-- [x] 确认 Lagrange 自包含包解压后的实际目录结构
-- [x] 更新v2文档中的解压与可执行路径说明
-- [ ] 验证所有配置项的实际效果
-- [ ] 补充更多故障排查场景
-
-—— 完 ——
