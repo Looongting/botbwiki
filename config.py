@@ -15,7 +15,8 @@ class Config:
     
     # Onebot 连接配置
     ONEBOT_WS_URL: str = os.getenv("ONEBOT_WS_URL", "ws://127.0.0.1:8080/onebot/v11/ws")
-    ONEBOT_HTTP_URL: str = os.getenv("ONEBOT_HTTP_URL", "http://127.0.0.1:8081")
+    ONEBOT_WS_URLS: str = os.getenv("ONEBOT_WS_URLS", '["ws://127.0.0.1:8080/onebot/v11/ws"]')
+    ONEBOT_HTTP_URL: str = os.getenv("ONEBOT_HTTP_URL", "http://127.0.0.1:8080")
     
     # 机器人配置
     BOT_NAME: str = os.getenv("BOT_NAME", "QQ机器人")
