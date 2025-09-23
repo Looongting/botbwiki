@@ -26,7 +26,11 @@ from src.core.config import config
 class MessageLogger:
     """消息记录器"""
     
-    def __init__(self, db_path: str = "message_log.db"):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            # 获取项目根目录
+            project_root = os.path.dirname(os.path.dirname(__file__))
+            db_path = os.path.join(project_root, "data", "message_log.db")
         self.db_path = db_path
         self.init_database()
     
