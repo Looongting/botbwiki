@@ -145,15 +145,17 @@ python -m src.core.verify_config
 ⚠️ **重要提示**: AI总结功能目前存在技术问题，详见 `AI_SUMMARY_PROJECT_OVERVIEW.md`
 
 ### 可用命令
+- `?ai <问题>` - 与AI进行智能对话（消息触发）✅
 - `?ai_test` - 测试AI连接是否正常 ✅
-- `?ai <问题>` - 与AI进行简单对话 ✅
+- `?ai_status` - 查询AI服务状态 ✅
 - `?ai_summary [日期]` - 总结指定日期的群消息 ❌ (开发中)
 - `?ai_auto <天数>` - 批量生成总结 ❌ (开发中)
 
 ### 配置要求
-1. **火山引擎AI账号**：需要注册火山引擎账号并开通AI服务
-2. **API密钥**：配置ARK_API_KEY到.env文件
+1. **AI服务账号**：支持LongCat AI（默认）和火山引擎AI（备用）
+2. **API密钥**：配置LONGCAT_API_KEY或ARK_API_KEY到.env文件
 3. **目标群配置**：支持多群配置，格式：`TARGET_GROUP_IDS=[群ID1,群ID2]`
+4. **触发词配置**：默认使用`?ai`，可通过`AI_TRIGGER_PREFIX`自定义
 
 ### 详细文档
 - `AI_SUMMARY_PROJECT_OVERVIEW.md` - 完整项目概览和技术细节

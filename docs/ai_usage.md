@@ -2,7 +2,7 @@
 
 ## 概述
 
-本机器人集成了火山引擎AI服务，提供智能对话和消息总结功能。
+本机器人集成了多种AI服务，包括LongCat AI和火山引擎AI，提供智能对话和消息总结功能。默认使用LongCat AI服务，支持自动切换备用服务。
 
 ## 功能列表
 
@@ -25,25 +25,48 @@ AI回复：我是一个AI助手，可以帮助您解答问题和提供信息。
 ```
 
 ### 2. AI对话
-**命令**: `?ai <问题>`
+**触发方式**: 在群内发送以 `?ai ` 开头的消息
 
-**功能**: 与AI进行简单对话
+**功能**: 与AI进行智能对话，支持各种问题咨询
 
 **示例**:
 ```
 ?ai 今天天气怎么样？
 ?ai 请推荐一本好书
 ?ai 1+1等于几？
+?ai 帮我写一首关于春天的诗
+?ai 解释一下什么是人工智能
 ```
 
 **回复示例**:
 ```
 🤖 AI正在思考...
 🤖 AI回复：
-今天天气很好，阳光明媚，适合外出活动。
+今天天气很好，阳光明媚，适合外出活动。建议您可以出门散步或进行户外运动。
 ```
 
-### 3. 群消息总结（开发中）
+### 3. AI服务状态查询
+**命令**: `?ai_status`
+
+**功能**: 查询当前AI服务配置和状态
+
+**示例**:
+```
+?ai_status
+```
+
+**回复示例**:
+```
+🤖 AI服务状态
+
+触发词：?ai
+默认服务：longcat
+可用服务：longcat, volc
+
+使用方法：?ai <你的问题>
+```
+
+### 4. 群消息总结（开发中）
 **命令**: `?ai_summary [日期]`
 
 **功能**: 总结指定群在过去一段时间内的消息主题
@@ -73,7 +96,15 @@ AI回复：我是一个AI助手，可以帮助您解答问题和提供信息。
 
 ## 配置要求
 
-### 1. 火山引擎AI账号
+### 1. AI服务账号
+根据需要申请以下AI服务账号：
+
+#### LongCat AI（推荐，默认）
+- 访问 LongCat AI 平台申请API密钥：https://longcat.chat/platform
+- 使用美团App扫码登录
+- 成本较低，响应速度快，由美团研发
+
+#### 火山引擎AI（备用）
 - 注册火山引擎账号
 - 开通AI服务
 - 获取API密钥
@@ -82,13 +113,21 @@ AI回复：我是一个AI助手，可以帮助您解答问题和提供信息。
 在`.env`文件中添加以下配置：
 
 ```bash
-# 火山引擎AI配置
-VOLC_AI_ACCESS_KEY=your_access_key_here
-VOLC_AI_SECRET_KEY=your_secret_key_here
-VOLC_AI_REGION=cn-beijing
-VOLC_AI_ENDPOINT=ep-20250811175605-fxzbh
+# AI功能配置
+AI_TRIGGER_PREFIX=?ai                # AI触发词，可自定义
+DEFAULT_AI_SERVICE=longcat           # 默认AI服务：longcat 或 volc
 AI_SUMMARY_MAX_TOKENS=2000
 AI_SUMMARY_TIMEOUT=30
+
+# LongCat AI配置（推荐）
+LONGCAT_API_KEY=your_api_key_here
+LONGCAT_API_URL=https://api.longcat.chat/openai
+LONGCAT_MODEL=LongCat-Flash-Chat
+
+# 火山引擎AI配置（备用）
+ARK_API_KEY=your_api_key_here
+VOLC_AI_REGION=cn-beijing
+VOLC_AI_ENDPOINT=ep-20250811175605-fxzbh
 ```
 
 ### 3. 依赖安装
@@ -108,6 +147,7 @@ python test_ai.py
 1. 确保机器人已启动
 2. 在群内发送 `?ai_test` 测试连接
 3. 发送 `?ai 你好` 测试对话功能
+4. 发送 `?ai_status` 查看服务状态
 
 ## 故障排查
 
