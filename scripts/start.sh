@@ -5,11 +5,15 @@
 echo "🤖 QQ 机器人启动脚本"
 echo "=================================================="
 
+# 切换到项目根目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+cd "$PROJECT_ROOT"
+
 # 检查是否在正确的目录
-if [ ! -f "start.py" ]; then
-    echo "❌ 错误：请在项目根目录下运行此脚本"
+if [ ! -f "main.py" ]; then
+    echo "❌ 错误：找不到 main.py 文件"
     echo "   当前目录：$(pwd)"
-    echo "   请切换到包含 start.py 的目录"
     exit 1
 fi
 
@@ -43,15 +47,15 @@ fi
 # 检查配置文件
 if [ ! -f ".env" ]; then
     echo "⚠️  配置文件不存在，正在创建..."
-    if [ -f "env.example" ]; then
-        cp env.example .env
+    if [ -f "config/env.example" ]; then
+        cp config/env.example .env
         echo "✅ 已创建 .env 文件，请编辑配置后重新运行"
         echo "   主要配置项："
         echo "   - ONEBOT_WS_URL: Onebot WebSocket 连接地址"
         echo "   - ONEBOT_HTTP_URL: Onebot HTTP 连接地址"
         exit 0
     else
-        echo "❌ 找不到 env.example 文件"
+        echo "❌ 找不到 config/env.example 文件"
         exit 1
     fi
 fi
@@ -62,4 +66,4 @@ echo "   按 Ctrl+C 停止机器人"
 echo "=================================================="
 
 # 启动机器人
-python start.py
+python main.py

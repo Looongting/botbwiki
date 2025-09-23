@@ -27,7 +27,10 @@ import os
 
 # 添加项目根目录到 Python 路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import config
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+from src.core.config import config
 
 
 class VolcAI:
@@ -166,7 +169,7 @@ async def handle_ai_summary(bot: Bot, event: GroupMessageEvent):
                 return
         
         # 导入总结管理器
-        from ai_summary_manager import ai_summary_manager
+        from src.core.ai_summary_manager import ai_summary_manager
         
         # 发送开始消息
         date_desc = target_date.strftime("%Y年%m月%d日") if target_date else "昨天"
@@ -281,7 +284,7 @@ async def handle_ai_auto_summary(bot: Bot, event: GroupMessageEvent):
             return
         
         # 导入总结管理器
-        from ai_summary_manager import ai_summary_manager
+        from src.core.ai_summary_manager import ai_summary_manager
         
         # 计算日期范围
         end_date = datetime.now() - timedelta(days=1)  # 昨天

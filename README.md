@@ -21,6 +21,47 @@
   - **最低配置**：1核CPU、1GB内存、10GB硬盘、1Mbps带宽
   - **系统**：Ubuntu Server 18.04.1 LTS 或更高版本
 
+## 项目结构
+
+```
+botbwiki/
+├── main.py                     # 项目主入口文件
+├── check_env.py               # 环境检查入口
+├── requirements.txt           # Python依赖
+├── pyproject.toml            # 项目配置
+├── README.md                 # 项目文档
+├── src/                      # 源代码目录
+│   └── core/                # 核心模块
+│       ├── config.py        # 配置管理
+│       ├── check_env.py     # 环境检查
+│       ├── verify_config.py # 配置验证
+│       ├── ai_prompts.py    # AI提示词
+│       └── ai_summary_manager.py # AI总结管理
+├── plugins/                  # 插件目录
+│   ├── shortlink.py         # 短链功能
+│   ├── random.py            # 随机数功能
+│   ├── ai_summary.py        # AI总结功能
+│   ├── ai_test_simple.py    # AI测试功能
+│   └── message_logger.py    # 消息日志
+├── config/                   # 配置文件目录
+│   ├── env.example          # 环境变量模板
+│   ├── lagrange-config-template.json # Lagrange配置模板
+│   └── systemd-service-templates/     # 系统服务模板
+├── scripts/                  # 脚本目录
+│   ├── start.sh             # 启动脚本
+│   ├── install.sh           # 安装脚本
+│   ├── install_ai_deps.sh   # AI依赖安装
+│   └── fix-permissions.sh   # 权限修复
+├── docs/                     # 文档目录
+│   ├── zero-to-one-ubuntu.md # 部署教程
+│   ├── troubleshooting.md   # 故障排查
+│   ├── usage.md             # 使用说明
+│   └── ai_usage.md          # AI功能说明
+├── logs/                     # 日志目录
+├── data/                     # 数据目录
+└── venv/                     # 虚拟环境
+```
+
 ## 立即开始
 - 从零到一（Ubuntu 单页教程）：`docs/zero-to-one-ubuntu.md`
 - 故障排查（5 分钟定位）：`docs/troubleshooting.md`
@@ -56,7 +97,7 @@
   - 云服务器部署：`ConsoleCompatibilityMode=true`
   - 连接稳定：`HeartBeatEnable=true`
   - 安全考虑：`Host=127.0.0.1`（非0.0.0.0）
-- **机器人环境变量模板**：仓库根 `env.example`（复制为 `.env` 并按需最小化修改）
+- **机器人环境变量模板**：`config/env.example`（复制为项目根目录 `.env` 并按需最小化修改）
   - 核心配置：`ONEBOT_WS_URL=ws://127.0.0.1:8080/onebot/v11/ws`
   - 日志配置：`LOG_LEVEL=INFO`
   - 短链配置：`SHORTLINK_TIMEOUT=2`、`SHORTLINK_RETRY=1`
@@ -96,7 +137,7 @@ sudo ufw status || true
 # 验证配置
 cd /home/ubuntu/botbwiki
 python check_env.py
-python verify_config.py
+python -m src.core.verify_config
 ```
 
 ## AI功能说明
@@ -131,12 +172,25 @@ AI_SUMMARY_MAX_TOKENS=2000
 AI_SUMMARY_TIMEOUT=30
 ```
 
+### 快速启动
+
+```bash
+# 1. 启动机器人（推荐）
+python main.py
+
+# 2. 或使用脚本启动（包含环境检查）
+./scripts/start.sh
+
+# 3. 检查环境
+python check_env.py
+```
+
 ### 安装步骤
-1. **确保虚拟环境已创建**：运行 `./install.sh`
-2. **安装AI依赖**：运行 `./install_ai_deps.sh`
-3. **配置AI密钥**：在 `.env` 文件中添加上述配置
-4. **测试功能**：运行 `python test_ai.py`
-5. **启动机器人**：运行 `./start.sh`
+1. **确保虚拟环境已创建**：运行 `./scripts/install.sh`
+2. **安装AI依赖**：运行 `./scripts/install_ai_deps.sh`
+3. **配置AI密钥**：复制 `config/env.example` 为 `.env` 并添加上述配置
+4. **测试功能**：运行 `python check_env.py`
+5. **启动机器人**：运行 `python main.py`
 
 ## 安全建议
 1. **修改默认端口**：将8080改为其他端口

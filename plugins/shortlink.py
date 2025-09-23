@@ -18,7 +18,10 @@ import time
 
 # 添加项目根目录到 Python 路径
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config import config
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+from src.core.config import config
 
 # 简单的内存缓存
 url_cache: Dict[str, tuple] = {}  # {url_hash: (short_url, timestamp)}

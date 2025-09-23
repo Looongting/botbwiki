@@ -8,9 +8,9 @@ Requires=lagrange-onebot.service
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/opt/qq-bot
-Environment=PATH=/opt/qq-bot/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=/opt/qq-bot/venv/bin/python start.py
+WorkingDirectory=/home/ubuntu/botbwiki
+Environment=PATH=/home/ubuntu/botbwiki/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/ubuntu/botbwiki/venv/bin/python main.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -18,10 +18,9 @@ StandardError=journal
 SyslogIdentifier=qq-bot
 
 # 安全设置
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=true
-ReadWritePaths=/opt/qq-bot
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
 
 # 资源限制
 MemoryMax=256M

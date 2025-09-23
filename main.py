@@ -8,10 +8,15 @@ import nonebot
 from nonebot.adapters.onebot.v11 import Adapter as ONEBOT_V11Adapter
 from nonebot.log import logger
 import os
+import sys
 from dotenv import load_dotenv
 
+# 添加src目录到Python路径
+project_root = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(project_root, 'src'))
+
 # 加载环境变量
-load_dotenv()
+load_dotenv(os.path.join(project_root, '.env'))
 
 # 初始化 Nonebot
 nonebot.init(
@@ -28,8 +33,11 @@ driver.register_adapter(ONEBOT_V11Adapter)
 nonebot.load_plugins("plugins")
 
 # 配置日志
+log_file = os.getenv("LOG_FILE", "bot.log")
+if not os.path.isabs(log_file):
+    log_file = os.path.join(project_root, "logs", log_file)
 logger.add(
-    os.getenv("LOG_FILE", "bot.log"),
+    log_file,
     rotation="1 day",
     retention="7 days",
     level=os.getenv("LOG_LEVEL", "INFO"),
