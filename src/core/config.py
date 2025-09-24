@@ -73,11 +73,14 @@ class Config:
     
     # AI基础配置
     AI_TRIGGER_PREFIX: str = os.getenv("AI_TRIGGER_PREFIX", "?ai")                     # 用户偏好
-    DEFAULT_AI_SERVICE: str = os.getenv("DEFAULT_AI_SERVICE", "longcat")              # 用户选择
+    DEFAULT_AI_SERVICE: str = os.getenv("DEFAULT_AI_SERVICE", "volc")              # 用户选择 longcat 或 volc
     AI_SUMMARY_MAX_TOKENS: int = int(os.getenv("AI_SUMMARY_MAX_TOKENS", "2000"))     # 性能调优
     AI_SUMMARY_TIMEOUT: int = int(os.getenv("AI_SUMMARY_TIMEOUT", "30"))             # 性能调优
     AI_LOG_DIR: str = "logs/ai"                                                       # 固定路径
     AI_SUMMARY_ENABLED: bool = os.getenv("AI_SUMMARY_ENABLED", "true").lower() == "true"  # 功能开关
+    
+    # AI Prompt配置 - 自动添加到用户问题前的提示词
+    AI_PROMPT_PREFIX: str = os.getenv("AI_PROMPT_PREFIX", "请不要使用markdown语法，回复token控制在2000以内。用户问题：")
     
     # LongCat AI配置（默认服务）
     LONGCAT_API_KEY: str = os.getenv("LONGCAT_API_KEY", "")                          # 敏感信息

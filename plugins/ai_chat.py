@@ -57,9 +57,10 @@ async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
         # 发送思考中的提示
         await ai_chat_handler.send("🤖 AI正在思考...")
         
-        # 构建消息
+        # 构建消息 - 在用户问题前添加配置的prompt前缀
+        full_question = f"{config.AI_PROMPT_PREFIX}{user_question}"
         messages = [
-            {"role": "user", "content": user_question}
+            {"role": "user", "content": full_question}
         ]
         
         # 调用AI服务

@@ -156,6 +156,7 @@ python -m src.core.verify_config
 2. **API密钥**：配置LONGCAT_API_KEY或ARK_API_KEY到.env文件
 3. **目标群配置**：支持多群配置，格式：`TARGET_GROUP_IDS=[群ID1,群ID2]`
 4. **触发词配置**：默认使用`?ai`，可通过`AI_TRIGGER_PREFIX`自定义
+5. **AI Prompt配置**：支持自动添加prompt前缀，可通过`AI_PROMPT_PREFIX`自定义
 
 ### 详细文档
 - `AI_SUMMARY_PROJECT_OVERVIEW.md` - 完整项目概览和技术细节
@@ -165,9 +166,16 @@ python -m src.core.verify_config
 
 ### 配置示例
 ```bash
-# 火山引擎AI配置
-VOLC_AI_ACCESS_KEY=your_access_key_here
-VOLC_AI_SECRET_KEY=your_secret_key_here
+# AI服务配置
+LONGCAT_API_KEY=your_longcat_api_key_here
+ARK_API_KEY=your_volc_api_key_here
+
+# AI功能配置
+AI_TRIGGER_PREFIX=?ai
+DEFAULT_AI_SERVICE=longcat
+AI_PROMPT_PREFIX=请直接回答用户问题，不要使用markdown语法，回复要简洁明了。用户问题：
+
+# 火山引擎AI配置（备用）
 VOLC_AI_REGION=cn-beijing
 VOLC_AI_ENDPOINT=ep-20250811175605-fxzbh
 AI_SUMMARY_MAX_TOKENS=2000
