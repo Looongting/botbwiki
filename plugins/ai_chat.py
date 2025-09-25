@@ -15,6 +15,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.core.config import config
 from src.core.ai_manager import ai_manager
+from src.core.message_sender import get_sender
 
 
 def is_ai_trigger() -> Rule:
@@ -43,19 +44,24 @@ ai_chat_handler = on_message(rule=is_ai_trigger(), priority=3)
 async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
     """处理AI对话请求"""
     try:
+        # 获取消息发送器
+        message_sender = get_sender()
+        
         # 提取用户问题
         message = str(event.get_message()).strip()
         user_question = message[len(config.AI_TRIGGER_PREFIX):].strip()
         
         if not user_question:
-            await ai_chat_handler.finish(
+            # 使用新的消息发送器发送用法说明
+            await message_sender.send_reply(
+                event,
                 f"用法：{config.AI_TRIGGER_PREFIX} <你的问题>\n"
                 f"例如：{config.AI_TRIGGER_PREFIX} 今天天气怎么样？"
             )
             return
         
         # 发送思考中的提示
-        await ai_chat_handler.send("🤖 AI正在思考...")
+        await message_sender.send_reply(event, "🤖 AI正在思考...")
         
         # 构建消息 - 在用户问题前添加配置的prompt前缀
         full_question = f"{config.AI_PROMPT_PREFIX}{user_question}"
@@ -72,7 +78,7 @@ async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
             if len(result) > max_length:
                 result = result[:max_length] + "...\n\n[回复内容过长，已截断]"
             
-            await ai_chat_handler.finish(f"🤖 AI回复：\n{result}")
+            await message_sender.send_reply(event, f"🤖 AI回复：\n{result}")
         else:
             # 尝试使用备用AI服务
             available_services = ai_manager.get_available_services()
@@ -86,18 +92,18 @@ async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
                             max_length = 1000
                             if len(result) > max_length:
                                 result = result[:max_length] + "...\n\n[回复内容过长，已截断]"
-                            await ai_chat_handler.finish(f"🤖 AI回复：\n{result}")
+                            await message_sender.send_reply(event, f"🤖 AI回复：\n{result}")
                             return
             
-            await ai_chat_handler.finish("❌ AI暂时无法回复，请稍后重试")
+            await message_sender.send_reply(event, "❌ AI暂时无法回复，请稍后重试")
             
     except asyncio.TimeoutError:
-        await ai_chat_handler.finish("⏰ AI响应超时，请稍后重试")
+        await message_sender.send_reply(event, "⏰ AI响应超时，请稍后重试")
     except Exception as e:
         # 忽略FinishedException，这是NoneBot正常的结束异常
         if "FinishedException" not in str(type(e)):
             logger.error(f"AI对话插件错误: {e}")
-            await ai_chat_handler.finish("❌ AI服务异常，请稍后重试")
+            await message_sender.send_reply(event, "❌ AI服务异常，请稍后重试")
 
 
 # AI测试命令 - 保持命令形式，方便管理员测试
@@ -110,17 +116,20 @@ ai_test_handler = on_command("ai_test", priority=5)
 async def handle_ai_test(bot: Bot, event: GroupMessageEvent):
     """处理AI测试请求"""
     try:
+        # 获取消息发送器
+        message_sender = get_sender()
+        
         # 检查是否在允许的群中
         if event.group_id not in config.TARGET_GROUP_IDS:
             return
         
-        await ai_test_handler.send("🤖 正在测试AI连接...")
+        await message_sender.send_reply(event, "🤖 正在测试AI连接...")
         
         # 测试默认AI服务
         success, message = await ai_manager.test_connection()
         
         if success:
-            await ai_test_handler.finish(f"✅ AI测试成功！\n\n使用的服务: {config.DEFAULT_AI_SERVICE}\nAI回复：{message}")
+            await message_sender.send_reply(event, f"✅ AI测试成功！\n\n使用的服务: {config.DEFAULT_AI_SERVICE}\nAI回复：{message}")
         else:
             # 尝试其他可用服务
             available_services = ai_manager.get_available_services()
@@ -129,16 +138,16 @@ async def handle_ai_test(bot: Bot, event: GroupMessageEvent):
                     if service != config.DEFAULT_AI_SERVICE:
                         success, message = await ai_manager.test_connection(service)
                         if success:
-                            await ai_test_handler.finish(f"⚠️ 默认AI服务失败，但备用服务可用\n\n使用的服务: {service}\nAI回复：{message}")
+                            await message_sender.send_reply(event, f"⚠️ 默认AI服务失败，但备用服务可用\n\n使用的服务: {service}\nAI回复：{message}")
                             return
             
-            await ai_test_handler.finish(f"❌ AI测试失败\n\n错误信息：{message}")
+            await message_sender.send_reply(event, f"❌ AI测试失败\n\n错误信息：{message}")
             
     except Exception as e:
         # 忽略FinishedException，这是NoneBot正常的结束异常
         if "FinishedException" not in str(type(e)):
             logger.error(f"AI测试插件错误: {e}")
-            await ai_test_handler.finish("❌ AI测试失败，请稍后重试")
+            await message_sender.send_reply(event, "❌ AI测试失败，请稍后重试")
 
 
 # AI服务状态查询命令
@@ -149,6 +158,9 @@ ai_status_handler = on_command("ai_status", priority=5)
 async def handle_ai_status(bot: Bot, event: GroupMessageEvent):
     """查询AI服务状态"""
     try:
+        # 获取消息发送器
+        message_sender = get_sender()
+        
         # 检查是否在允许的群中
         if event.group_id not in config.TARGET_GROUP_IDS:
             return
@@ -166,10 +178,10 @@ async def handle_ai_status(bot: Bot, event: GroupMessageEvent):
         else:
             status_info += "⚠️ 当前没有可用的AI服务，请检查配置"
         
-        await ai_status_handler.finish(status_info)
+        await message_sender.send_reply(event, status_info)
         
     except Exception as e:
         # 忽略FinishedException，这是NoneBot正常的结束异常
         if "FinishedException" not in str(type(e)):
             logger.error(f"AI状态查询错误: {e}")
-            await ai_status_handler.finish("❌ 查询AI状态失败")
+            await message_sender.send_reply(event, "❌ 查询AI状态失败")

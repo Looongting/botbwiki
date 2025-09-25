@@ -6,12 +6,12 @@
 - 一个基于 NoneBot2 + OneBot v11（Lagrange.OneBot）的 QQ 机器人
 - 功能：多 Wiki 快捷链接、随机数等，插件可扩展
 - 主要特性：
-  - 恋与深空WIKI快捷链接（`gd检索词`）
-  - 米斯特利亚WIKI快捷链接（`m检索词`）
+  - WIKI快捷链接（`检索词`）基于 curid 直达页，无需第三方短链
   - 随机数生成（`.rand`、`.randrange`）
+  - AI对话功能（`?ai 问题`）
   - AI总结功能（`.ai_test`、`.ai`、`.ai_summary`）
   - 支持缓存，相同页面命中更快
-  - 基于 curid 直达页，无需第三方短链
+
 
 ## 适用对象与平台
 - 读者：初次部署者、维护者
@@ -19,7 +19,7 @@
 - 服务器配置要求：
   - **推荐配置**：2核CPU、2GB内存、20GB+ SSD、3Mbps+带宽
   - **最低配置**：1核CPU、1GB内存、10GB硬盘、1Mbps带宽
-  - **系统**：Ubuntu Server 18.04.1 LTS 或更高版本
+  - **系统**：Ubuntu Server 24 或更高版本
 
 ## 项目结构
 
@@ -36,17 +36,23 @@ botbwiki/
 │       ├── check_env.py     # 环境检查
 │       ├── verify_config.py # 配置验证
 │       ├── ai_prompts.py    # AI提示词
-│       └── ai_summary_manager.py # AI总结管理
+│       ├── ai_summary_manager.py # AI总结管理
+│       ├── http_client.py   # HTTP API 客户端
+│       └── message_sender.py # 统一消息发送器
 ├── plugins/                  # 插件目录
 │   ├── shortlink.py         # 短链功能
 │   ├── random.py            # 随机数功能
 │   ├── ai_summary.py        # AI总结功能
 │   ├── ai_test_simple.py    # AI测试功能
+│   ├── ai_chat.py           # AI对话功能（已优化为HTTP API）
 │   └── message_logger.py    # 消息日志
 ├── config/                   # 配置文件目录
 │   ├── env.example          # 环境变量模板
 │   ├── lagrange-config-template.json # Lagrange配置模板
 │   └── systemd-service-templates/     # 系统服务模板
+├── tools/                    # 工具目录
+│   ├── test_message_sender.py # 消息发送器测试工具
+│   └── ...                  # 其他工具
 ├── scripts/                  # 脚本目录
 │   ├── start.sh             # 启动脚本
 │   ├── install.sh           # 安装脚本

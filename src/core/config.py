@@ -100,6 +100,21 @@ class Config:
     VOLC_AI_ENDPOINT: str = "ep-20250811175605-fxzbh"                               # 固定端点
     VOLC_AI_API_URL: str = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"  # 固定端点
     
+    # ===========================================
+    # 📤 消息发送配置
+    # ===========================================
+    
+    # 消息发送器配置
+    MESSAGE_SENDER_ENABLED: bool = os.getenv("MESSAGE_SENDER_ENABLED", "true").lower() == "true"  # 消息发送器开关
+    HTTP_API_TIMEOUT: int = int(os.getenv("HTTP_API_TIMEOUT", "10"))                 # HTTP 请求超时（秒）
+    MESSAGE_MAX_RETRIES: int = int(os.getenv("MESSAGE_MAX_RETRIES", "3"))            # 最大重试次数
+    MESSAGE_RETRY_DELAY: int = int(os.getenv("MESSAGE_RETRY_DELAY", "1"))            # 重试延迟（秒）
+    
+    # 频率限制配置
+    MESSAGE_RATE_LIMIT_ENABLED: bool = os.getenv("MESSAGE_RATE_LIMIT_ENABLED", "true").lower() == "true"  # 频率限制开关
+    MESSAGE_RATE_LIMIT_COUNT: int = int(os.getenv("MESSAGE_RATE_LIMIT_COUNT", "10")) # 时间窗口内最大发送数
+    MESSAGE_RATE_LIMIT_WINDOW: int = int(os.getenv("MESSAGE_RATE_LIMIT_WINDOW", "60")) # 时间窗口（秒）
+    
     
     # 目标群配置 - 支持多个群
     @property
