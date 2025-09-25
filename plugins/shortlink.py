@@ -22,6 +22,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 from src.core.config import config
+from src.core.message_sender import get_sender
 
 # 简单的内存缓存
 url_cache: Dict[str, tuple] = {}  # {url_hash: (short_url, timestamp)}
@@ -50,6 +51,9 @@ shortlink_handler = on_message(rule=is_shortlink_command(), priority=5)
 async def handle_shortlink(bot: Bot, event: GroupMessageEvent):
     """处理短链生成请求"""
     try:
+        # 获取消息发送器
+        message_sender = get_sender()
+        
         # 提取消息内容
         message = str(event.get_message()).strip()
         
@@ -63,7 +67,7 @@ async def handle_shortlink(bot: Bot, event: GroupMessageEvent):
                 break
         
         if not wiki_config:
-            await shortlink_handler.finish("不支持的关键字，请使用配置的关键字")
+            await message_sender.send_reply(event, "不支持的关键字，请使用配置的关键字")
             return
         
         # 提取检索词（去掉前缀，只取第一行内容）
@@ -98,8 +102,8 @@ async def handle_shortlink(bot: Bot, event: GroupMessageEvent):
         else:
             reply_message = f"{search_term}：{full_url}"
         
-        # 发送回复消息
-        await shortlink_handler.finish(reply_message)
+        # 使用新的消息发送器发送回复消息
+        await message_sender.send_reply(event, reply_message)
             
     except Exception as e:
         # 检查是否是 FinishedException，如果是则不需要处理
