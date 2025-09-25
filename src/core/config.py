@@ -22,6 +22,9 @@ class Config:
     ONEBOT_WS_URLS: str = os.getenv("ONEBOT_WS_URLS", '["ws://127.0.0.1:8080/onebot/v11/ws"]')
     ONEBOT_HTTP_URL: str = os.getenv("ONEBOT_HTTP_URL", "http://127.0.0.1:8080")
     
+    # HTTP API 配置（用于直接调用 Lagrange.OneBot API）
+    ONEBOT_HTTP_API_URL: str = os.getenv("ONEBOT_HTTP_API_URL", "http://127.0.0.1:8081")
+    
     # 短链服务配置
     SHORTLINK_TIMEOUT: int = int(os.getenv("SHORTLINK_TIMEOUT", "3"))  # 可调优
     SHORTLINK_RETRY: int = int(os.getenv("SHORTLINK_RETRY", "2"))      # 可调优
@@ -34,6 +37,10 @@ class Config:
     
     BOT_NAME: str = "QQ机器人"  # 固定名称
     BOT_MASTER_ID: Optional[int] = int(os.getenv("BOT_MASTER_ID", "0")) or None  # 敏感信息
+    
+    # 测试配置
+    TEST_GROUP_ID: Optional[int] = int(os.getenv("TEST_GROUP_ID", "0")) or None  # 测试群组ID
+    TEST_USER_ID: Optional[int] = int(os.getenv("TEST_USER_ID", "0")) or None    # 测试私聊对象QQ号
     
     # 日志配置
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")        # 调试需要

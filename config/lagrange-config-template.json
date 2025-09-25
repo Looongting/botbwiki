@@ -1,5 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/LagrangeDev/Lagrange.Core/master/Lagrange.OneBot/Resources/appsettings_schema.json",
+  
   "Logging": {
     "LogLevel": {
       "Default": "Information",
@@ -7,9 +8,11 @@
       "Microsoft.Hosting.Lifetime": "Information"
     }
   },
+  
   "SignServerUrl": "https://sign.lagrangecore.org/api/sign/39038",
   "SignProxyUrl": "",
   "MusicSignServerUrl": "",
+  
   "Account": {
     "Uin": 0,
     "Password": "",
@@ -17,13 +20,16 @@
     "AutoReconnect": true,
     "GetOptimumServer": true
   },
+  
   "Message": {
     "IgnoreSelf": true,
     "StringPost": false
   },
+  
   "QrCode": {
     "ConsoleCompatibilityMode": false
   },
+  
   "Implementations": [
     {
       "Type": "ForwardWebSocket",
@@ -33,6 +39,12 @@
       "ReconnectInterval": 5000,
       "HeartBeatInterval": 5000,
       "HeartBeatEnable": true,
+      "AccessToken": ""
+    },
+    {
+      "Type": "Http",
+      "Host": "*",
+      "Port": 8081,
       "AccessToken": ""
     }
   ]

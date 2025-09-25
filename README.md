@@ -55,8 +55,8 @@ botbwiki/
 ├── docs/                     # 文档目录
 │   ├── zero-to-one-ubuntu.md # 部署教程
 │   ├── troubleshooting.md   # 故障排查
-│   ├── usage.md             # 使用说明
-│   └── ai_usage.md          # AI功能说明
+│   ├── usage.md             # 使用说明（包含AI功能）
+│   └── http_api_usage.md    # HTTP API使用指南
 ├── logs/                     # 日志目录
 ├── data/                     # 数据目录
 └── venv/                     # 虚拟环境
@@ -66,6 +66,7 @@ botbwiki/
 - 从零到一（Ubuntu 单页教程）：`docs/zero-to-one-ubuntu.md`
 - 故障排查（5 分钟定位）：`docs/troubleshooting.md`
 - 群内使用说明：`docs/usage.md`
+- HTTP API 使用指南：`docs/http_api_usage.md`
 
 ## 技术栈
 
@@ -76,6 +77,11 @@ botbwiki/
 - **AI服务**: 火山引擎AI（消息总结和对话功能）
 - **Python版本**: 3.8+（推荐使用虚拟环境）
 - **系统服务**: systemd（服务化管理）
+
+## 实现方式
+
+- **主要方式**：NoneBot2 + WebSocket（事件驱动，推荐）
+- **HTTP API**：支持直接调用，详见 `docs/http_api_usage.md`
 
 ## 端口配置说明
 
@@ -97,11 +103,17 @@ botbwiki/
   - 云服务器部署：`ConsoleCompatibilityMode=true`
   - 连接稳定：`HeartBeatEnable=true`
   - 安全考虑：`Host=127.0.0.1`（非0.0.0.0）
+  - **HTTP API支持**：添加 `"Type": "Http"` 配置启用 HTTP API
 - **机器人环境变量模板**：`config/env.example`（复制为项目根目录 `.env` 并按需最小化修改）
   - 核心配置：`ONEBOT_WS_URL=ws://127.0.0.1:8080/onebot/v11/ws`
   - 日志配置：`LOG_LEVEL=INFO`
   - 短链配置：`SHORTLINK_TIMEOUT=2`、`SHORTLINK_RETRY=1`
   - AI配置：`VOLC_AI_ACCESS_KEY`、`VOLC_AI_SECRET_KEY`（火山引擎AI密钥）
+
+### 配置文件说明
+- **配置模板**：`config/lagrange-config-template.json` - 包含详细注释的完整配置模板
+- **配置指南**：`config/LAGRANGE_CONFIG_GUIDE.md` - 详细的配置说明和使用指南
+- **HTTP API 测试工具**：`tools/` 目录下的测试工具，用于验证 HTTP API 功能
 
 ## 文档使用建议
 - **你是新手**：直接按"从零到一"单页顺序完成部署与验证

@@ -22,6 +22,12 @@
 - **随机数（1-100）**：`.rand`
 - **指定范围随机数**：`.randrange <最小值> <最大值>`
 
+### AI功能
+- **AI连接测试**：`?ai_test`
+- **AI对话**：`?ai <问题>`
+- **AI服务状态**：`?ai_status`
+- **群消息总结**：`?ai_summary [日期]`（开发中）
+
 ## 使用示例
 
 ### 短链使用示例
@@ -37,6 +43,14 @@ m瓦伦     # 机器人回复：瓦伦：https://wiki.biligame.com/mistria/?curi
 .randrange 100 1000     # 机器人回复：随机数：567
 ```
 
+### AI功能使用示例
+```text
+?ai_test                 # 机器人回复：🤖 正在测试AI连接... ✅ AI测试成功！
+?ai 今天天气怎么样？     # 机器人回复：🤖 AI正在思考... 🤖 AI回复：今天天气很好...
+?ai_status              # 机器人回复：🤖 AI服务状态 触发词：?ai 默认服务：longcat...
+?ai_summary             # 机器人回复：📊 正在分析群消息... 📋 群消息总结...
+```
+
 ## 功能说明
 
 ### 短链功能特性
@@ -50,6 +64,13 @@ m瓦伦     # 机器人回复：瓦伦：https://wiki.biligame.com/mistria/?curi
 - **自定义范围**：`.randrange` 支持指定最小值和最大值
 - **范围限制**：建议区间差 ≤ 10000，避免过大范围影响性能
 - **即时响应**：本地生成，无需网络请求
+
+### AI功能特性
+- **多服务支持**：支持LongCat AI（默认）和火山引擎AI（备用）
+- **智能对话**：支持各种问题咨询，自动添加prompt前缀
+- **服务切换**：自动检测服务状态，支持备用服务切换
+- **状态查询**：可查询当前AI服务配置和状态
+- **消息总结**：支持群消息主题总结（开发中）
 
 ## 常见问题
 
@@ -114,7 +135,31 @@ curl -I https://wiki.biligame.com/mistria/ || true
 - **短链**：`检索词：链接`
 - **随机数**：`随机数：数字`
 
-### 4. 权限问题
+### 4. AI功能问题
+
+#### AI连接失败
+**可能原因**：
+- API密钥配置错误
+- 网络连接问题
+- AI服务异常
+
+**解决方法**：
+1. 检查`.env`文件中的AI密钥配置
+2. 运行`?ai_test`测试连接
+3. 查看机器人日志获取详细错误信息
+
+#### AI回复超时
+**可能原因**：
+- 网络延迟
+- AI服务负载高
+- 请求内容过长
+
+**解决方法**：
+1. 简化问题内容
+2. 稍后重试
+3. 检查网络连接
+
+### 5. 权限问题
 
 #### 检查文件权限
 ```bash
@@ -141,6 +186,11 @@ echo "m测试" | nc localhost 8080
 # 测试随机数功能
 echo ".rand" | nc localhost 8080
 echo ".randrange 1 10" | nc localhost 8080
+
+# 测试AI功能
+echo "?ai_test" | nc localhost 8080
+echo "?ai 你好" | nc localhost 8080
+echo "?ai_status" | nc localhost 8080
 ```
 
 ### 日志分析
@@ -150,6 +200,10 @@ grep "短链" /home/ubuntu/botbwiki/bot.log
 
 # 查看随机数请求日志
 grep "随机数" /home/ubuntu/botbwiki/bot.log
+
+# 查看AI功能日志
+grep "AI" /home/ubuntu/botbwiki/bot.log
+grep "ai_test\|ai_status" /home/ubuntu/botbwiki/bot.log
 
 # 查看错误日志
 grep "ERROR" /home/ubuntu/botbwiki/bot.log
