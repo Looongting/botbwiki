@@ -35,6 +35,12 @@ class MessageSender:
         self.retry_delay = getattr(config, 'MESSAGE_RETRY_DELAY', 1)
         self.max_retries = getattr(config, 'MESSAGE_MAX_RETRIES', 3)
         
+        # 转发消息配置
+        self.forward_enabled = getattr(config, 'MESSAGE_FORWARD_ENABLED', True)
+        self.forward_threshold = getattr(config, 'MESSAGE_FORWARD_THRESHOLD', 500)
+        self.forward_max_length = getattr(config, 'MESSAGE_FORWARD_MAX_LENGTH', 2000)
+        self.forward_max_count = getattr(config, 'MESSAGE_FORWARD_MAX_COUNT', 10)
+        
         # 限流控制
         self._message_times: List[float] = []
         self._lock = asyncio.Lock()
@@ -140,22 +146,132 @@ class MessageSender:
         
         return False
     
-    # ===========================================
-    # 公共接口方法
-    # ===========================================
+    def _is_pure_text(self, message: str) -> bool:
+        """判断是否为纯文本消息"""
+        # 纯文本判断：不包含CQ码（图片、语音、@等特殊消息）
+        # CQ码格式：[CQ:type,data=value]
+        return '[CQ:' not in message
     
-    async def send_group_message(self, group_id: int, message: str, max_retries: Optional[int] = None) -> bool:
-        """
-        发送群消息
+    def _split_long_text(self, text: str) -> List[str]:
+        """将长文本切割为多个片段"""
+        if len(text) <= self.forward_max_length:
+            return [text]
         
-        Args:
-            group_id: 群ID
-            message: 消息内容
-            max_retries: 最大重试次数，默认使用配置值
+        chunks = []
+        current_pos = 0
+        
+        while current_pos < len(text):
+            # 计算当前片段的结束位置
+            end_pos = min(current_pos + self.forward_max_length, len(text))
             
-        Returns:
-            发送是否成功
-        """
+            # 如果不是最后一片，尝试在合适的位置断句
+            if end_pos < len(text):
+                # 寻找最近的句号、问号、感叹号或换行符
+                for i in range(end_pos, max(current_pos + self.forward_max_length // 2, current_pos), -1):
+                    if text[i] in ['。', '！', '？', '\n', '.', '!', '?']:
+                        end_pos = i + 1
+                        break
+                else:
+                    # 如果没找到合适的断句点，寻找空格
+                    for i in range(end_pos, max(current_pos + self.forward_max_length // 2, current_pos), -1):
+                        if text[i] in [' ', '\t']:
+                            end_pos = i + 1
+                            break
+            
+            chunk = text[current_pos:end_pos].strip()
+            if chunk:
+                chunks.append(chunk)
+            
+            current_pos = end_pos
+            
+            # 防止无限循环
+            if len(chunks) >= self.forward_max_count:
+                # 如果超过最大数量，将剩余内容作为最后一片
+                remaining = text[current_pos:].strip()
+                if remaining:
+                    chunks.append(remaining[:self.forward_max_length] + "...")
+                break
+        
+        return chunks
+    
+    async def _send_forward_message(self, group_id: int, messages: List[str]) -> bool:
+        """发送转发消息"""
+        try:
+            # 构建转发消息数据 - 使用 OneBot 标准格式
+            forward_data = {
+                "group_id": group_id,
+                "messages": []
+            }
+            
+            # 为每条消息创建转发节点
+            for i, message in enumerate(messages):
+                node = {
+                    "type": "node",
+                    "data": {
+                        "name": f"机器人消息 {i+1}",
+                        "uin": str(config.BOT_MASTER_ID or 3330219965),  # 使用机器人QQ号，转为字符串
+                        "content": message
+                    }
+                }
+                forward_data["messages"].append(node)
+            
+            # 调用转发消息API
+            result = await self.client.call_api("send_group_forward_msg", forward_data)
+            
+            if result.get("status") == "ok":
+                logger.info(f"转发消息发送成功: group:{group_id}, 消息数:{len(messages)}")
+                return True
+            else:
+                logger.error(f"转发消息发送失败: {result.get('error', '未知错误')}")
+                # 如果转发失败，尝试使用合并转发的方式
+                return await self._send_forward_message_alternative(group_id, messages)
+                
+        except Exception as e:
+            logger.error(f"转发消息发送异常: {e}")
+            return False
+    
+    async def _send_forward_message_alternative(self, group_id: int, messages: List[str]) -> bool:
+        """备用转发消息发送方式 - 逐条发送带编号的消息"""
+        try:
+            logger.info("尝试使用备用转发方式：逐条发送带编号消息")
+            
+            success_count = 0
+            for i, message in enumerate(messages):
+                # 为每条消息添加编号
+                numbered_message = f"【{i+1}/{len(messages)}】\n{message}"
+                
+                # 发送单条消息
+                msg = Message(
+                    type="group",
+                    target_id=group_id,
+                    content=numbered_message,
+                    max_retries=self.max_retries
+                )
+                
+                result = await self._send_with_retry(msg)
+                if result.get("status") == "ok":
+                    success_count += 1
+                    # 短暂延迟，避免消息发送过快
+                    await asyncio.sleep(0.5)
+                else:
+                    logger.warning(f"备用转发消息 {i+1} 发送失败: {result.get('error', '未知错误')}")
+            
+            if success_count == len(messages):
+                logger.info(f"备用转发消息发送成功: group:{group_id}, 消息数:{len(messages)}")
+                return True
+            elif success_count > 0:
+                logger.warning(f"备用转发消息部分成功: {success_count}/{len(messages)}")
+                return True
+            else:
+                logger.error("备用转发消息全部发送失败")
+                return False
+                
+        except Exception as e:
+            logger.error(f"备用转发消息发送异常: {e}")
+            return False
+    
+    async def _send_group_message_normal(self, group_id: int, message: str, max_retries: Optional[int] = None) -> bool:
+        """普通群消息发送函数"""
         msg = Message(
             type="group",
             target_id=group_id,
@@ -165,6 +281,94 @@ class MessageSender:
         
         result = await self._send_with_retry(msg)
         return result.get("status") == "ok"
+    
+    async def _send_group_forward_message(self, group_id: int, message: str) -> bool:
+        """群组转发消息函数"""
+        # 按最大长度切割文本
+        chunks = self._split_text_by_max_length(message)
+        
+        logger.info(f"文本按最大长度{self.forward_max_length}切割为 {len(chunks)} 个片段")
+        
+        # 尝试发送转发消息
+        if await self._send_forward_message(group_id, chunks):
+            return True
+        else:
+            logger.warning("转发消息失败，回退到普通消息发送")
+            # 转发失败，回退到普通消息发送
+            return await self._send_group_message_normal(group_id, message)
+    
+    def _split_text_by_max_length(self, text: str) -> List[str]:
+        """按最大长度切割文本"""
+        if len(text) <= self.forward_max_length:
+            return [text]
+        
+        chunks = []
+        current_pos = 0
+        
+        while current_pos < len(text):
+            # 计算当前片段的结束位置，使用最大长度作为切割依据
+            end_pos = min(current_pos + self.forward_max_length, len(text))
+            
+            # 如果不是最后一片，尝试在合适的位置断句
+            if end_pos < len(text):
+                # 寻找最近的句号、问号、感叹号或换行符
+                for i in range(end_pos, max(current_pos + self.forward_max_length // 2, current_pos), -1):
+                    if text[i] in ['。', '！', '？', '\n', '.', '!', '?']:
+                        end_pos = i + 1
+                        break
+                else:
+                    # 如果没找到合适的断句点，寻找空格
+                    for i in range(end_pos, max(current_pos + self.forward_max_length // 2, current_pos), -1):
+                        if text[i] in [' ', '\t']:
+                            end_pos = i + 1
+                            break
+            
+            chunk = text[current_pos:end_pos].strip()
+            if chunk:
+                chunks.append(chunk)
+            
+            current_pos = end_pos
+            
+            # 防止无限循环
+            if len(chunks) >= self.forward_max_count:
+                # 如果超过最大数量，将剩余内容作为最后一片
+                remaining = text[current_pos:].strip()
+                if remaining:
+                    chunks.append(remaining[:self.forward_max_length] + "...")
+                break
+        
+        return chunks
+    
+    async def _send_group_message_adaptive(self, group_id: int, message: str, max_retries: Optional[int] = None) -> bool:
+        """自适应群消息发送函数：按字数调用不同的发送方式"""
+        # 检查是否启用转发功能且为纯文本
+        if (self.forward_enabled and 
+            len(message) > self.forward_threshold):
+            
+            logger.info(f"检测到长文本消息，长度: {len(message)}，使用转发模式")
+            return await self._send_group_forward_message(group_id, message)
+        else:
+            logger.info(f"使用普通消息模式，长度: {len(message)}")
+            return await self._send_group_message_normal(group_id, message, max_retries)
+    
+    
+    # ===========================================
+    # 公共接口方法
+    # ===========================================
+    
+    async def send_group_message(self, group_id: int, message: str, max_retries: Optional[int] = None) -> bool:
+        """
+        发送群消息，自适应选择发送方式
+        
+        Args:
+            group_id: 群ID
+            message: 消息内容
+            max_retries: 最大重试次数，默认使用配置值
+            
+        Returns:
+            发送是否成功
+        """
+        return await self._send_group_message_adaptive(group_id, message, max_retries)
     
     async def send_private_message(self, user_id: int, message: str, max_retries: Optional[int] = None) -> bool:
         """
@@ -290,6 +494,15 @@ class MessageSender:
             "window": self.rate_limit_window,
             "current_count": len(recent_messages),
             "remaining": max(0, self.rate_limit_count - len(recent_messages))
+        }
+    
+    def get_forward_status(self) -> Dict[str, Any]:
+        """获取转发消息状态"""
+        return {
+            "enabled": self.forward_enabled,
+            "threshold": self.forward_threshold,
+            "max_length": self.forward_max_length,
+            "max_count": self.forward_max_count
         }
 
 
