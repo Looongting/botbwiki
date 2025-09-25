@@ -412,6 +412,150 @@ class MessageSender:
             logger.error(f"不支持的事件类型: {type(event)}")
             return False
     
+    async def send_reply_with_reference(self, event: Union[GroupMessageEvent, PrivateMessageEvent], message: str, max_retries: Optional[int] = None) -> bool:
+        """
+        引用回复消息（检查原始消息是否存在，如果不存在则不发送）
+        复用原有的发送消息函数，支持长文本自动转发
+        
+        Args:
+            event: 消息事件
+            message: 回复内容
+            max_retries: 最大重试次数，默认使用配置值
+            
+        Returns:
+            发送是否成功
+        """
+        try:
+            # 检查原始消息是否存在
+            message_id = event.message_id
+            result = await self.client.get_msg(message_id)
+            
+            if result.get("status") != "ok":
+                logger.warning(f"原始消息不存在或已被撤回/删除，消息ID: {message_id}")
+                return False
+            
+            # 原始消息存在，发送引用回复
+            if isinstance(event, GroupMessageEvent):
+                return await self._send_group_reply_with_reference_optimized(event.group_id, message_id, message, max_retries)
+            elif isinstance(event, PrivateMessageEvent):
+                return await self._send_private_reply_with_reference_optimized(event.user_id, message_id, message, max_retries)
+            else:
+                logger.error(f"不支持的事件类型: {type(event)}")
+                return False
+                
+        except Exception as e:
+            logger.error(f"引用回复发送异常: {e}")
+            return False
+    
+    async def _send_group_reply_with_reference_optimized(self, group_id: int, message_id: int, message: str, max_retries: Optional[int] = None) -> bool:
+        """
+        发送群组引用回复消息（优化版）
+        复用原有的发送消息函数，支持长文本自动转发
+        
+        Args:
+            group_id: 群ID
+            message_id: 要引用的消息ID
+            message: 回复内容
+            max_retries: 最大重试次数
+            
+        Returns:
+            发送是否成功
+        """
+        # 检查是否需要转发（长文本）
+        if (self.forward_enabled and 
+            len(message) > self.forward_threshold):
+            
+            logger.info(f"检测到长文本引用回复，长度: {len(message)}，先发送引用提示，然后转发")
+            
+            # 先发送引用回复提示
+            reply_hint = f"[CQ:reply,id={message_id}]请查收"
+            hint_msg = Message(
+                type="group",
+                target_id=group_id,
+                content=reply_hint,
+                max_retries=max_retries or self.max_retries
+            )
+            
+            hint_result = await self._send_with_retry(hint_msg)
+            if hint_result.get("status") != "ok":
+                logger.warning(f"引用提示发送失败: {hint_result.get('error', '未知错误')}")
+                # 如果提示发送失败，回退到普通引用回复
+                return await self._send_group_reply_simple(group_id, message_id, message, max_retries)
+            
+            # 然后发送转发消息
+            return await self._send_group_forward_message(group_id, message)
+        else:
+            # 短文本，直接发送引用回复
+            return await self._send_group_reply_simple(group_id, message_id, message, max_retries)
+    
+    async def _send_private_reply_with_reference_optimized(self, user_id: int, message_id: int, message: str, max_retries: Optional[int] = None) -> bool:
+        """
+        发送私聊引用回复消息（优化版）
+        私聊不支持转发，直接发送引用回复
+        
+        Args:
+            user_id: 用户ID
+            message_id: 要引用的消息ID
+            message: 回复内容
+            max_retries: 最大重试次数
+            
+        Returns:
+            发送是否成功
+        """
+        return await self._send_private_reply_simple(user_id, message_id, message, max_retries)
+    
+    async def _send_group_reply_simple(self, group_id: int, message_id: int, message: str, max_retries: Optional[int] = None) -> bool:
+        """
+        发送简单的群组引用回复消息
+        
+        Args:
+            group_id: 群ID
+            message_id: 要引用的消息ID
+            message: 回复内容
+            max_retries: 最大重试次数
+            
+        Returns:
+            发送是否成功
+        """
+        # 构建引用回复消息 - 使用OneBot标准的回复格式
+        reply_message = f"[CQ:reply,id={message_id}]{message}"
+        
+        msg = Message(
+            type="group",
+            target_id=group_id,
+            content=reply_message,
+            max_retries=max_retries or self.max_retries
+        )
+        
+        result = await self._send_with_retry(msg)
+        return result.get("status") == "ok"
+    
+    async def _send_private_reply_simple(self, user_id: int, message_id: int, message: str, max_retries: Optional[int] = None) -> bool:
+        """
+        发送简单的私聊引用回复消息
+        
+        Args:
+            user_id: 用户ID
+            message_id: 要引用的消息ID
+            message: 回复内容
+            max_retries: 最大重试次数
+            
+        Returns:
+            发送是否成功
+        """
+        # 构建引用回复消息 - 使用OneBot标准的回复格式
+        reply_message = f"[CQ:reply,id={message_id}]{message}"
+        
+        msg = Message(
+            type="private",
+            target_id=user_id,
+            content=reply_message,
+            max_retries=max_retries or self.max_retries
+        )
+        
+        result = await self._send_with_retry(msg)
+        return result.get("status") == "ok"
+    
     async def send_multiple_messages(self, messages: List[Dict[str, Any]], max_concurrent: int = 5) -> List[bool]:
         """
         批量发送消息

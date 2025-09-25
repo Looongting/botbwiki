@@ -161,6 +161,20 @@ class LagrangeAPIClient:
             "group_id": group_id
         })
     
+    async def get_msg(self, message_id: int) -> Dict[str, Any]:
+        """
+        获取消息信息
+        
+        Args:
+            message_id: 消息ID
+            
+        Returns:
+            API 响应结果
+        """
+        return await self.call_api("get_msg", {
+            "message_id": message_id
+        })
+    
     # ===========================================
     # 批量操作相关 API
     # ===========================================

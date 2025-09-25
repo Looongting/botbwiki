@@ -52,8 +52,8 @@ async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
         user_question = message[len(config.AI_TRIGGER_PREFIX):].strip()
         
         if not user_question:
-            # 使用新的消息发送器发送用法说明
-            await message_sender.send_reply(
+            # 使用引用回复发送用法说明
+            await message_sender.send_reply_with_reference(
                 event,
                 f"用法：{config.AI_TRIGGER_PREFIX} <你的问题>\n"
                 f"例如：{config.AI_TRIGGER_PREFIX} 今天天气怎么样？"
@@ -78,7 +78,8 @@ async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
             if len(result) > max_length:
                 result = result[:max_length] + "...\n\n[回复内容过长，已截断]"
             
-            await message_sender.send_reply(event, f"🤖 AI回复：\n{result}")
+            # 使用引用回复发送AI回复
+            await message_sender.send_reply_with_reference(event, f"🤖 AI回复：\n{result}")
         else:
             # 尝试使用备用AI服务
             available_services = ai_manager.get_available_services()
@@ -92,18 +93,20 @@ async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
                             max_length = 1000
                             if len(result) > max_length:
                                 result = result[:max_length] + "...\n\n[回复内容过长，已截断]"
-                            await message_sender.send_reply(event, f"🤖 AI回复：\n{result}")
+                            # 使用引用回复发送AI回复
+                            await message_sender.send_reply_with_reference(event, f"🤖 AI回复：\n{result}")
                             return
             
-            await message_sender.send_reply(event, "❌ AI暂时无法回复，请稍后重试")
+            # 使用引用回复发送错误信息
+            await message_sender.send_reply_with_reference(event, "❌ AI暂时无法回复，请稍后重试")
             
     except asyncio.TimeoutError:
-        await message_sender.send_reply(event, "⏰ AI响应超时，请稍后重试")
+        await message_sender.send_reply_with_reference(event, "⏰ AI响应超时，请稍后重试")
     except Exception as e:
         # 忽略FinishedException，这是NoneBot正常的结束异常
         if "FinishedException" not in str(type(e)):
             logger.error(f"AI对话插件错误: {e}")
-            await message_sender.send_reply(event, "❌ AI服务异常，请稍后重试")
+            await message_sender.send_reply_with_reference(event, "❌ AI服务异常，请稍后重试")
 
 
 # AI测试命令 - 保持命令形式，方便管理员测试
