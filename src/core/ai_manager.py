@@ -16,13 +16,13 @@ class BaseAIClient:
     
     def __init__(self, service_name: str):
         self.service_name = service_name
-        self.service_config = config.get_ai_service_config(service_name)
+        self.service_config = config.AI_SERVICES.get(service_name, {})
         self.timeout = config.AI_SUMMARY_TIMEOUT
         
     @property
     def is_enabled(self) -> bool:
-        """检查服务是否启用"""
-        return config.is_ai_service_enabled(self.service_name)
+        """检查服务是否启用（有API密钥即为启用）"""
+        return bool(self.service_config.get("api_key"))
     
     async def chat_completion(self, messages: List[Dict[str, str]]) -> Optional[str]:
         """调用AI聊天完成API - 子类需要实现"""
@@ -209,19 +209,49 @@ class AIManager:
     
     def __init__(self):
         self.clients = {}
+        # AI客户端注册表 - 支持动态扩展
+        self.client_registry = {
+            "longcat": LongCatAI,
+            "volc": VolcAI,
+            "glm": GLMAI,
+            # 新增AI服务只需在这里注册类即可
+        }
         self._initialize_clients()
     
     def _initialize_clients(self):
-        """初始化AI客户端"""
-        # 根据配置中的AI_SERVICES动态创建客户端
+        """动态初始化AI客户端"""
         for service_name, service_config in config.AI_SERVICES.items():
-            if service_name == "longcat":
-                self.clients[service_name] = LongCatAI()
-            elif service_name == "volc":
-                self.clients[service_name] = VolcAI()
-            elif service_name == "glm":
-                self.clients[service_name] = GLMAI()
-            # 未来可以在这里添加更多AI服务
+            client_class = self.client_registry.get(service_name)
+            if client_class:
+                try:
+                    self.clients[service_name] = client_class()
+                    logger.debug(f"成功初始化AI客户端: {service_name}")
+                except Exception as e:
+                    logger.error(f"初始化AI客户端 {service_name} 失败: {e}")
+            else:
+                logger.warning(f"未找到AI服务 {service_name} 对应的客户端类")
+    
+    def register_client(self, service_name: str, client_class):
+        """
+        注册新的AI客户端类
+        
+        Args:
+            service_name: 服务名称
+            client_class: 客户端类（必须继承自BaseAIClient）
+        """
+        if not issubclass(client_class, BaseAIClient):
+            raise ValueError(f"客户端类 {client_class} 必须继承自 BaseAIClient")
+        
+        self.client_registry[service_name] = client_class
+        logger.info(f"注册AI客户端类: {service_name} -> {client_class.__name__}")
+        
+        # 如果配置中存在该服务，立即初始化
+        if service_name in config.AI_SERVICES:
+            try:
+                self.clients[service_name] = client_class()
+                logger.info(f"成功初始化新注册的AI客户端: {service_name}")
+            except Exception as e:
+                logger.error(f"初始化新注册的AI客户端 {service_name} 失败: {e}")
     
     def get_client(self, service_name: str) -> Optional[BaseAIClient]:
         """获取指定AI服务的客户端"""

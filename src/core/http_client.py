@@ -192,6 +192,26 @@ class LagrangeAPIClient:
             params["message_id"] = message_id
         return await self.call_api("get_group_msg_history", params)
     
+    async def set_group_reaction(self, group_id: int, message_id: int, code: str, is_add: bool = True) -> Dict[str, Any]:
+        """
+        设置群消息表情回复
+        
+        Args:
+            group_id: 群ID
+            message_id: 消息ID
+            code: 表情代码
+            is_add: 是否添加表情，False为移除表情
+            
+        Returns:
+            API 响应结果
+        """
+        return await self.call_api("set_group_reaction", {
+            "group_id": group_id,
+            "message_id": message_id,
+            "code": code,
+            "is_add": is_add
+        })
+    
     # ===========================================
     # 批量操作相关 API
     # ===========================================

@@ -90,80 +90,62 @@ class Config:
     # AI Prompt配置 - 自动添加到用户问题前的提示词
     AI_PROMPT_PREFIX: str = os.getenv("AI_PROMPT_PREFIX", "请不要使用markdown语法，回复token控制在2000以内。用户问题：")
     
-    # AI服务配置 - 统一的字典结构管理多个AI服务
+    # AI服务配置 - 精简配置结构
     AI_SERVICES: dict = {
         "glm": {
-            "api_key": os.getenv("GLM_API_KEY", ""),                                 # 敏感信息
-            "api_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",     # 智谱AI官方API端点
-            "model": "glm-4.5-flash",                                               # 免费的GLM-4.5-flash模型
-            "name": "智谱AI GLM",                                                    # 服务名称
-            "enabled": True,          # 用户手动配置是否启用
-            "trigger_prefix": "?glm"                                                  # 群聊触发前缀
+            "api_key": os.getenv("GLM_API_KEY", ""),
+            "api_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+            "model": "glm-4.5-flash",
+            "name": "智谱AI",
+            "trigger": "?glm"
         },
         "longcat": {
-            "api_key": os.getenv("LONGCAT_API_KEY", ""),                              # 敏感信息
-            "api_url": "https://api.longcat.chat/openai",                             # 固定端点
-            "model": "LongCat-Flash-Chat",                                            # 固定模型
-            "name": "LongCat AI",                                                     # 服务名称
-            "enabled": True,      # 用户手动配置是否启用
-            "trigger_prefix": "?lc"                                                   # 群聊触发前缀
+            "api_key": os.getenv("LONGCAT_API_KEY", ""),
+            "api_url": "https://api.longcat.chat/openai",
+            "model": "LongCat-Flash-Chat",
+            "name": "LongCat",
+            "trigger": "?lc"
         },
         "volc": {
-            "api_key": os.getenv("ARK_API_KEY", ""),                                 # 敏感信息
-            "api_url": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",  # 固定端点
-            "model": "ep-20250811175605-fxzbh",                                      # 固定端点（火山引擎的endpoint）
-            "region": "cn-beijing",                                                   # 固定区域
-            "name": "火山引擎AI",                                                     # 服务名称
-            "enabled": True,         # 用户手动配置是否启用
-            "trigger_prefix": "?volc"                                                 # 群聊触发前缀
-        }        
-        # 示例：其他AI服务配置结构
-        # "openai": {
-        #     "api_key": os.getenv("OPENAI_API_KEY", ""),
-        #     "api_url": "https://api.openai.com/v1/chat/completions",
-        #     "model": "gpt-3.5-turbo",
-        #     "name": "OpenAI GPT",
-        #     "enabled": bool(os.getenv("OPENAI_API_KEY", "")),
-        # },
-        # "claude": {
-        #     "api_key": os.getenv("CLAUDE_API_KEY", ""),
-        #     "api_url": "https://api.anthropic.com/v1/messages",
-        #     "model": "claude-3-haiku-20240307",
-        #     "name": "Claude AI",
-        #     "enabled": bool(os.getenv("CLAUDE_API_KEY", "")),
-        # },
+            "api_key": os.getenv("ARK_API_KEY", ""),
+            "api_url": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+            "model": "ep-20250811175605-fxzbh",
+            "name": "火山AI",
+            "trigger": "?volc",
+            "region": "cn-beijing"
+        }
     }
     
-    # AI服务配置访问方法
+    # AI服务简化访问方法
     @property
     def available_ai_services(self) -> list:
-        """获取所有可用的AI服务列表"""
-        return [service for service, config in self.AI_SERVICES.items() if config.get("enabled", False)]
-    
-    def get_ai_service_config(self, service_name: str) -> dict:
-        """获取指定AI服务的配置"""
-        return self.AI_SERVICES.get(service_name, {})
-    
-    def is_ai_service_enabled(self, service_name: str) -> bool:
-        """检查指定AI服务是否启用"""
-        return self.AI_SERVICES.get(service_name, {}).get("enabled", False)
+        """获取可用的AI服务（有API密钥的服务）"""
+        return [name for name, config in self.AI_SERVICES.items() if config.get("api_key")]
     
     @property
-    def default_ai_service_config(self) -> dict:
-        """获取默认AI服务的配置 - ?ai命令使用的AI服务"""
-        # 从AI_SERVICES中从上往下选择第一个enabled为true的AI作为?ai的默认AI模型
-        for service, config in self.AI_SERVICES.items():
-            if config.get("enabled", False):
-                return config
-        
-        return {}
+    def default_ai_service(self) -> Optional[str]:
+        """获取默认AI服务名称（第一个可用的服务）"""
+        services = self.available_ai_services
+        return services[0] if services else None
     
-    def get_ai_service_by_trigger_prefix(self, trigger_prefix: str) -> tuple:
-        """根据trigger_prefix获取对应的AI服务配置和服务名"""
-        for service_name, config in self.AI_SERVICES.items():
-            if config.get("trigger_prefix") == trigger_prefix:
-                return service_name, config
-        return None, {}
+    def get_service_by_trigger(self, message: str) -> Optional[tuple[str, str]]:
+        """
+        根据消息识别AI服务
+        
+        Returns:
+            (service_name, trigger) 或 None
+        """
+        # 检查特定服务触发词（支持带空格和不带空格的格式）
+        for name, config in self.AI_SERVICES.items():
+            trigger = config.get("trigger", "")
+            if trigger and (message.startswith(trigger + " ") or message == trigger):
+                return name, trigger
+        
+        # 检查默认触发词（支持带空格和不带空格的格式）
+        if message.startswith(self.AI_TRIGGER_PREFIX + " ") or message == self.AI_TRIGGER_PREFIX:
+            return None, self.AI_TRIGGER_PREFIX
+        
+        return None
     
     # ===========================================
     # 📤 消息发送配置

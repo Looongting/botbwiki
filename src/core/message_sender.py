@@ -614,6 +614,48 @@ class MessageSender:
         
         return results
     
+    async def send_group_reaction(self, group_id: int, message_id: int, reaction_code: str = "👍", is_add: bool = True) -> bool:
+        """
+        发送群消息表情回复
+        
+        Args:
+            group_id: 群ID
+            message_id: 消息ID
+            reaction_code: 表情代码，默认为👍
+            is_add: 是否添加表情，False为移除表情
+            
+        Returns:
+            发送是否成功
+        """
+        try:
+            result = await self.client.set_group_reaction(group_id, message_id, reaction_code, is_add)
+            if result.get("status") == "ok":
+                logger.info(f"表情回复发送成功: group:{group_id}, message:{message_id}, reaction:{reaction_code}")
+                return True
+            else:
+                logger.error(f"表情回复发送失败: {result.get('error', '未知错误')}")
+                return False
+        except Exception as e:
+            logger.error(f"表情回复发送异常: {e}")
+            return False
+    
+    async def send_reaction_to_event(self, event: Union[GroupMessageEvent, PrivateMessageEvent], reaction_code: str = "🤖") -> bool:
+        """
+        对事件消息发送表情回复
+        
+        Args:
+            event: 消息事件
+            reaction_code: 表情代码，默认为🤖
+            
+        Returns:
+            发送是否成功
+        """
+        if isinstance(event, GroupMessageEvent):
+            return await self.send_group_reaction(event.group_id, event.message_id, reaction_code)
+        else:
+            logger.warning("私聊消息不支持表情回复")
+            return False
+    
     # ===========================================
     # 工具方法
     # ===========================================
