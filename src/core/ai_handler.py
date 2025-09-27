@@ -64,8 +64,9 @@ class AIHandler:
                 return False
             
             # 发送表情回复（替代原来的文字提示）
-            # 使用set_group_reaction API对用户消息进行表情回复
-            await self.message_sender.send_reaction_to_event(event, "2")  # 使用数字ID 2 表示机器人表情
+            # 根据不同的AI服务使用不同的表情ID
+            reaction_id = await self._get_ai_reaction_id(actual_service)
+            await self.message_sender.send_reaction_to_event(event, reaction_id)
             
             # 构建消息
             full_question = f"{config.AI_PROMPT_PREFIX}{user_question}"
@@ -130,6 +131,21 @@ class AIHandler:
             service_config = config.AI_SERVICES.get(default_service, {})
             display_name = service_config.get('name', default_service)
             return default_service, display_name
+    
+    async def _get_ai_reaction_id(self, service_name: str) -> str:
+        """
+        获取AI服务对应的表情ID
+        
+        Args:
+            service_name: AI服务名称
+            
+        Returns:
+            表情ID字符串
+        """
+        service_config = config.AI_SERVICES.get(service_name, {})
+        reaction_id = service_config.get('reaction_id', '2')  # 默认使用ID 2
+        logger.info(f"AI服务 {service_name} 使用表情ID: {reaction_id}")
+        return reaction_id
     
     async def _call_ai_with_fallback(self, messages: list, primary_service: str, display_name: str) -> Optional[str]:
         """

@@ -97,22 +97,25 @@ class Config:
             "api_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
             "model": "glm-4.5-flash",
             "name": "智谱AI",
-            "trigger": "?glm"
+            "trigger": "?glm",
+            "reaction_id": "32"  # 疑问
         },
         "longcat": {
             "api_key": os.getenv("LONGCAT_API_KEY", ""),
             "api_url": "https://api.longcat.chat/openai",
             "model": "LongCat-Flash-Chat",
             "name": "LongCat",
-            "trigger": "?lc"
+            "trigger": "?lc",
+            "reaction_id": "307"  # 喵喵
         },
         "volc": {
             "api_key": os.getenv("ARK_API_KEY", ""),
             "api_url": "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
             "model": "ep-20250811175605-fxzbh",
             "name": "火山AI",
-            "trigger": "?volc",
-            "region": "cn-beijing"
+            "trigger": "?db",
+            "region": "cn-beijing",
+            "reaction_id": "124"  # OK表情
         }
     }
     
