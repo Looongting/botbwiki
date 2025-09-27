@@ -69,32 +69,39 @@ async def handle_ai_chat(bot: Bot, event: GroupMessageEvent):
             {"role": "user", "content": full_question}
         ]
         
-        # 调用AI服务
-        result = await ai_manager.chat_completion(messages)
+        # 获取默认AI服务配置
+        default_config = config.default_ai_service_config
+        if not default_config:
+            await message_sender.send_reply_with_reference(event, "❌ 没有可用的AI服务，请检查配置")
+            return
+        
+        # 找到默认AI服务名称
+        default_service = None
+        for service_name, service_config in config.AI_SERVICES.items():
+            if service_config == default_config:
+                default_service = service_name
+                break
+        
+        # 调用默认AI服务
+        result = await ai_manager.chat_completion(messages, default_service)
         
         if result:
-            # 限制回复长度，避免消息过长
-            max_length = 1000
-            if len(result) > max_length:
-                result = result[:max_length] + "...\n\n[回复内容过长，已截断]"
-            
-            # 使用引用回复发送AI回复
-            await message_sender.send_reply_with_reference(event, f"🤖 AI回复：\n{result}")
+            # 直接使用AI的完整回复，不进行截断
+            service_name = default_config.get('name', default_service)
+            await message_sender.send_reply_with_reference(event, f"🤖 {service_name}回复：\n{result}")
         else:
-            # 尝试使用备用AI服务
+            # 尝试使用其他可用服务
             available_services = ai_manager.get_available_services()
             if len(available_services) > 1:
                 # 尝试其他可用服务
                 for service in available_services:
-                    if service != config.DEFAULT_AI_SERVICE:
+                    if service != default_service:
                         logger.info(f"尝试使用备用AI服务: {service}")
                         result = await ai_manager.chat_completion(messages, service)
                         if result:
-                            max_length = 1000
-                            if len(result) > max_length:
-                                result = result[:max_length] + "...\n\n[回复内容过长，已截断]"
-                            # 使用引用回复发送AI回复
-                            await message_sender.send_reply_with_reference(event, f"🤖 AI回复：\n{result}")
+                            # 直接使用AI的完整回复，不进行截断
+                            service_name = config.AI_SERVICES.get(service, {}).get('name', service)
+                            await message_sender.send_reply_with_reference(event, f"🤖 {service_name}回复：\n{result}")
                             return
             
             # 使用引用回复发送错误信息
@@ -128,20 +135,34 @@ async def handle_ai_test(bot: Bot, event: GroupMessageEvent):
         
         await message_sender.send_reply(event, "🤖 正在测试AI连接...")
         
+        # 获取默认AI服务配置
+        default_config = config.default_ai_service_config
+        if not default_config:
+            await message_sender.send_reply(event, "❌ 没有可用的AI服务，请检查配置")
+            return
+        
+        # 找到默认AI服务名称
+        default_service = None
+        for service_name, service_config in config.AI_SERVICES.items():
+            if service_config == default_config:
+                default_service = service_name
+                break
+        
         # 测试默认AI服务
-        success, message = await ai_manager.test_connection()
+        success, message = await ai_manager.test_connection(default_service)
         
         if success:
-            await message_sender.send_reply(event, f"✅ AI测试成功！\n\n使用的服务: {config.DEFAULT_AI_SERVICE}\nAI回复：{message}")
+            await message_sender.send_reply(event, f"✅ AI测试成功！\n\n使用的服务: {default_config.get('name', default_service)}\nAI回复：{message}")
         else:
             # 尝试其他可用服务
             available_services = ai_manager.get_available_services()
             if len(available_services) > 1:
                 for service in available_services:
-                    if service != config.DEFAULT_AI_SERVICE:
+                    if service != default_service:
                         success, message = await ai_manager.test_connection(service)
                         if success:
-                            await message_sender.send_reply(event, f"⚠️ 默认AI服务失败，但备用服务可用\n\n使用的服务: {service}\nAI回复：{message}")
+                            service_name = config.AI_SERVICES.get(service, {}).get('name', service)
+                            await message_sender.send_reply(event, f"⚠️ 默认AI服务失败，但备用服务可用\n\n使用的服务: {service_name}\nAI回复：{message}")
                             return
             
             await message_sender.send_reply(event, f"❌ AI测试失败\n\n错误信息：{message}")
@@ -172,14 +193,29 @@ async def handle_ai_status(bot: Bot, event: GroupMessageEvent):
         available_services = ai_manager.get_available_services()
         
         status_info = f"🤖 AI服务状态\n\n"
-        status_info += f"触发词：{config.AI_TRIGGER_PREFIX}\n"
-        status_info += f"默认服务：{config.DEFAULT_AI_SERVICE}\n"
-        status_info += f"可用服务：{', '.join(available_services) if available_services else '无'}\n\n"
+        status_info += f"默认触发词：{config.AI_TRIGGER_PREFIX}\n"
+        
+        # 显示所有AI服务状态
+        for service_name, service_config in config.AI_SERVICES.items():
+            service_display_name = service_config.get('name', service_name)
+            trigger_prefix = service_config.get('trigger_prefix', '')
+            enabled = service_config.get('enabled', False)
+            status = "✅ 启用" if enabled else "❌ 未启用"
+            status_info += f"• {service_display_name}: {status} ({trigger_prefix})\n"
+        
+        status_info += f"\n可用服务：{', '.join([config.AI_SERVICES.get(s, {}).get('name', s) for s in available_services]) if available_services else '无'}\n"
         
         if available_services:
-            status_info += f"使用方法：{config.AI_TRIGGER_PREFIX} <你的问题>"
+            status_info += f"\n使用方法：\n"
+            status_info += f"• {config.AI_TRIGGER_PREFIX} <问题> - 使用默认AI\n"
+            for service_name in available_services:
+                service_config = config.AI_SERVICES.get(service_name, {})
+                trigger_prefix = service_config.get('trigger_prefix', '')
+                service_display_name = service_config.get('name', service_name)
+                if trigger_prefix:
+                    status_info += f"• {trigger_prefix} <问题> - 使用{service_display_name}\n"
         else:
-            status_info += "⚠️ 当前没有可用的AI服务，请检查配置"
+            status_info += "\n⚠️ 当前没有可用的AI服务，请检查配置"
         
         await message_sender.send_reply(event, status_info)
         

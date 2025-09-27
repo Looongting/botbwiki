@@ -46,7 +46,7 @@ botbwiki/
 │   ├── ai_summary.py        # AI总结功能
 │   ├── ai_test_simple.py    # AI测试功能
 │   ├── ai_chat.py           # AI对话功能（已优化为HTTP API）
-│   └── message_logger.py    # 消息日志
+│   └── group_summary.py     # 群消息总结插件（已修复历史消息获取问题）
 ├── config/                   # 配置文件目录
 │   ├── env.example          # 环境变量模板
 │   ├── lagrange-config-template.json # Lagrange配置模板
@@ -74,6 +74,7 @@ botbwiki/
 - 故障排查（5 分钟定位）：`docs/troubleshooting.md`
 - 群内使用说明：`docs/usage.md`
 - HTTP API 使用指南：`docs/http_api_usage.md`
+- 群消息总结使用指南：`docs/group_summary_usage.md`
 
 ## 技术栈
 
@@ -161,21 +162,80 @@ python -m src.core.verify_config
 
 ## AI功能说明
 
-⚠️ **重要提示**: AI总结功能目前存在技术问题，详见 `AI_SUMMARY_PROJECT_OVERVIEW.md`
+✅ **群消息总结功能**: 新增群消息总结插件，支持自动提取技术答疑和知识共享内容
+
+### 最新更新
+- **2025-09-26**: 重构AI服务配置系统，支持多AI服务独立触发和手动启用控制
+  - 修改AI服务的enabled配置为用户手动配置（不再根据API_KEY自动判断）
+  - 为每个AI服务添加独立的trigger_prefix（?lc、?volc、?glm）
+  - 优化?ai命令逻辑，使用第一个启用的AI服务作为默认模型
+  - 新增根据trigger_prefix获取AI服务的方法
+- **2025-09-26**: 修复了群消息总结插件中的历史消息获取问题，现在可以正确获取指定日期的消息记录
+- **2025-09-26**: 修正了HTTP客户端API调用参数，使用正确的`message_id`和`count`参数替代错误的`message_seq`参数
+- **2025-09-26**: 优化了消息获取逻辑，通过多次调用API获取更多历史消息，解决了查询历史日期时返回空结果的问题
+- **2025-09-26**: 简化了时区计算逻辑，API返回的是本地时间戳，无需复杂的时区转换
 
 ### 可用命令
-- `?ai <问题>` - 与AI进行智能对话（消息触发）✅
+- `?ai <问题>` - 与AI进行智能对话（使用第一个启用的AI服务）✅
+- `?lc <问题>` - 使用LongCat AI对话 ✅
+- `?volc <问题>` - 使用火山引擎AI对话 ✅
+- `?glm <问题>` - 使用智谱AI GLM对话 ✅
 - `?ai_test` - 测试AI连接是否正常 ✅
 - `?ai_status` - 查询AI服务状态 ✅
-- `?ai_summary [日期]` - 总结指定日期的群消息 ❌ (开发中)
-- `?ai_auto <天数>` - 批量生成总结 ❌ (开发中)
+- `?ai_daySum [日期]` - 日总结指令，总结指定日期的群消息 ✅
+- `群总结 [日期]` - 总结指定日期的群消息 ✅
+- `批量总结 <天数>` - 批量生成最近N天的总结 ✅
+- `查看总结 [日期]` - 查看指定日期的总结结果 ✅
 
 ### 配置要求
-1. **AI服务账号**：支持LongCat AI（默认）和火山引擎AI（备用）
-2. **API密钥**：配置LONGCAT_API_KEY或ARK_API_KEY到.env文件
-3. **目标群配置**：支持多群配置，格式：`TARGET_GROUP_IDS=[群ID1,群ID2]`
-4. **触发词配置**：默认使用`?ai`，可通过`AI_TRIGGER_PREFIX`自定义
-5. **AI Prompt配置**：支持自动添加prompt前缀，可通过`AI_PROMPT_PREFIX`自定义
+1. **AI服务账号**：支持多种AI服务，包括LongCat AI、火山引擎AI、智谱AI GLM等
+2. **API密钥**：配置对应AI服务的API密钥到.env文件
+3. **服务启用**：通过对应的`_ENABLED`环境变量手动启用AI服务
+4. **目标群配置**：支持多群配置，格式：`TARGET_GROUP_IDS=[群ID1,群ID2]`
+5. **触发词配置**：每个AI服务都有独立的触发前缀，默认`?ai`使用第一个启用的服务
+6. **AI Prompt配置**：支持自动添加prompt前缀，可通过`AI_PROMPT_PREFIX`自定义
+
+### 群消息总结功能详细说明
+
+#### 功能特性
+1. **智能提取**: 自动识别群聊中的技术答疑和知识共享内容
+2. **主题合并**: 将相同主题的讨论内容合并整理
+3. **结构化输出**: 生成标准JSON格式的总结报告
+4. **批量处理**: 支持批量总结多天的群消息
+5. **历史查看**: 可随时查看已生成的总结结果
+6. **静默处理**: 总结过程不会向群内发送消息，仅记录到日志
+
+#### 使用示例
+```
+?ai_daySum               # 总结今天的消息（静默处理，仅记录日志）
+?ai_daySum 20250925      # 总结指定日期的消息（YYYYMMDD格式）
+?ai_daySum 今天          # 总结今天的消息
+?ai_daySum 昨天          # 总结昨天的消息
+群总结                    # 总结昨天的消息（静默处理，仅记录日志）
+群总结 2024-01-15        # 总结指定日期的消息
+群总结 今天              # 总结今天的消息
+批量总结 7               # 批量总结最近7天的消息（静默处理，仅记录日志）
+查看总结 2024-01-15      # 查看指定日期的总结结果（静默处理，仅记录日志）
+```
+
+**注意**: 所有群消息总结相关命令现在都采用静默处理模式，不会向群内发送任何消息，所有处理结果和状态信息都会记录到日志文件中。
+
+#### 数据存储
+- **原始记录**: `./data/history/{群ID}-{日期}.json`
+- **总结结果**: `./data/daySummary/{群ID}-{日期}-summary.json`
+
+#### 总结格式
+```json
+[
+  {
+    "name": "讨论主题名称",
+    "方案": [
+      "具体方案1",
+      "具体方案2"
+    ]
+  }
+]
+```
 
 ### 详细文档
 - `AI_SUMMARY_PROJECT_OVERVIEW.md` - 完整项目概览和技术细节
@@ -184,22 +244,45 @@ python -m src.core.verify_config
 3. **环境变量**：在`.env`文件中配置AI相关参数
 
 ### 配置示例
+
+#### AI服务配置（新版结构化配置）
+
+系统现在使用统一的字典结构管理多个AI服务，配置更加灵活和可扩展：
+
 ```bash
-# AI服务配置
+# AI功能基础配置
+AI_TRIGGER_PREFIX=?ai                    # AI对话触发词（使用第一个启用的服务）
+AI_DAY_SUMMARY_PREFIX=?ai_daySum         # 日总结触发词
+AI_PROMPT_PREFIX=请不要使用markdown语法，回复token控制在2000以内。用户问题：
+AI_SUMMARY_MAX_TOKENS=2000              # AI回复最大token数
+AI_SUMMARY_TIMEOUT=30                   # AI请求超时时间（秒）
+
+# LongCat AI服务配置
 LONGCAT_API_KEY=your_longcat_api_key_here
+LONGCAT_ENABLED=true                     # 手动启用LongCat AI（触发词：?lc）
+
+# 火山引擎AI服务配置  
 ARK_API_KEY=your_volc_api_key_here
+VOLC_ENABLED=true                        # 手动启用火山引擎AI（触发词：?volc）
 
-# AI功能配置
-AI_TRIGGER_PREFIX=?ai
-DEFAULT_AI_SERVICE=longcat
-AI_PROMPT_PREFIX=请直接回答用户问题，不要使用markdown语法，回复要简洁明了。用户问题：
+# 智谱AI GLM服务配置
+GLM_API_KEY=your_glm_api_key_here
+GLM_ENABLED=true                         # 手动启用智谱AI（触发词：?glm）
 
-# 火山引擎AI配置（备用）
-VOLC_AI_REGION=cn-beijing
-VOLC_AI_ENDPOINT=ep-20250811175605-fxzbh
-AI_SUMMARY_MAX_TOKENS=2000
-AI_SUMMARY_TIMEOUT=30
+# 未来可以添加更多AI服务，如：
+# OPENAI_API_KEY=your_openai_api_key_here
+# OPENAI_ENABLED=true
+# CLAUDE_API_KEY=your_claude_api_key_here
+# CLAUDE_ENABLED=true
 ```
+
+#### 配置特性
+
+1. **手动启用**：每个AI服务需要通过对应的`_ENABLED`环境变量手动启用
+2. **独立触发**：每个AI服务都有独立的触发前缀（如`?lc`、`?volc`、`?glm`）
+3. **智能回退**：`?ai`命令使用第一个启用的AI服务，如果该服务未开放则提示用户
+4. **易于扩展**：添加新AI服务只需在配置中添加相应字段
+5. **灵活控制**：可以根据需要启用或禁用特定的AI服务
 
 ### 快速启动
 

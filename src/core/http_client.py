@@ -175,6 +175,23 @@ class LagrangeAPIClient:
             "message_id": message_id
         })
     
+    async def get_group_msg_history(self, group_id: int, message_id: str = None, count: int = 20) -> Dict[str, Any]:
+        """
+        获取群聊历史消息
+        
+        Args:
+            group_id: 群ID
+            message_id: 起始消息ID，不指定则从最新消息开始
+            count: 获取消息数量，默认20条
+            
+        Returns:
+            API 响应结果
+        """
+        params = {"group_id": group_id, "count": count}
+        if message_id is not None:
+            params["message_id"] = message_id
+        return await self.call_api("get_group_msg_history", params)
+    
     # ===========================================
     # 批量操作相关 API
     # ===========================================
