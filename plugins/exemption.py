@@ -310,8 +310,9 @@ async def _add_exemption_permission(user_id: str, exemption_config: dict, event:
         # 创建Wiki API实例
         wiki_api = get_wiki_api(wiki_name)
         
-        # 测试连接
-        if not await wiki_api.test_connection():
+        # 测试连接（通过获取用户信息验证）
+        test_user_info = await wiki_api.get_user_info(user_id)
+        if not test_user_info:
             logger.error(f"Wiki API连接失败: {wiki_name}")
             return False, None, []
         

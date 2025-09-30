@@ -77,7 +77,7 @@ class Config:
     # 免审权限配置 - 关键字到权限设置的映射
     EXEMPTION_CONFIGS: dict = {
         "?lysk免审": {
-            "addgroup": ["automoderated"],
+            "addgroup": "automoderated",
             "wiki": "lysk",
             "checkPermission": False,
             "addTime":"curMonth"

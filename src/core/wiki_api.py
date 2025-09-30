@@ -197,7 +197,7 @@ class WikiAPI:
             return groups
         return None
     
-    async def add_user_to_group(self, user_id: str, group: str, reason: str = "机器人自动添加") -> bool:
+    async def add_user_to_group(self, user_id: str, group: str, reason: str = "机器人自动添加", expiry_time: Optional[str] = None) -> bool:
         """
         将用户添加到指定用户组
         
@@ -205,6 +205,7 @@ class WikiAPI:
             user_id: 用户ID（可以是用户名或用户ID）
             group: 用户组名称
             reason: 操作原因
+            expiry_time: 权限到期时间（可选，格式：2024-12-31T23:59:59Z）
             
         Returns:
             操作是否成功
@@ -224,6 +225,10 @@ class WikiAPI:
             "reason": reason,
             "token": token
         }
+        
+        # 如果有到期时间，添加到参数中
+        if expiry_time:
+            params["expiry"] = expiry_time
         
         data = await self._make_request(params, method="POST")
         if data and "userrights" in data:
