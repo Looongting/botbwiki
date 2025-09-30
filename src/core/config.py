@@ -75,24 +75,28 @@ class Config:
     }
     
     # 免审权限配置 - 关键字到权限设置的映射
+    # addgroup支持多种格式：
+    # 1. 单个用户组: "automoderated"
+    # 2. 多个用户组用|分隔: "interface-admin|sysop"
+    # 3. 列表格式: ["interface-admin", "sysop"]
     EXEMPTION_CONFIGS: dict = {
         "?lysk免审": {
             "addgroup": "automoderated",
             "wiki": "lysk",
             "checkPermission": False,
-            "addTime":"curMonth"
+            "addTime": "curMonth"
         },
-        "?lysk管理":{
-            "addgroup": ["interface-admin","sysop"],
+        "?lysk管理": {
+            "addgroup": "interface-admin|sysop",  # 使用|分隔多个用户组
             "wiki": "lysk",
             "checkPermission": True,
-            "addTime":"curMonth"
+            "addTime": "curMonth"
         },
-        "?lyskbili":{
-            "addgroup": ["bilibili"],
+        "?lyskbili": {
+            "addgroup": "bilibili",
             "wiki": "lysk",
             "checkPermission": False,
-            "addTime":"ever"
+            "addTime": "ever"
         }
     }
     ADD_TIME_SLOGAN: dict = {

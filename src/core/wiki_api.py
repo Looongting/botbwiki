@@ -236,16 +236,29 @@ class WikiAPI:
             added = result.get("added", [])
             removed = result.get("removed", [])
             
-            # 如果用户已经在组中，added会是空列表，但这不是错误
-            if group in added:
-                logger.info(f"成功将用户 {user_id} 添加到 {group} 组: {self.wiki_name}")
+            # 解析要添加的用户组列表
+            target_groups = group.split("|") if "|" in group else [group]
+            
+            # 检查是否有任何用户组被成功添加
+            if added:
+                # 有用户组被添加
+                added_groups = [g for g in target_groups if g in added]
+                if added_groups:
+                    logger.info(f"成功将用户 {user_id} 添加到 {added_groups} 组: {self.wiki_name}")
+                    return True
+            
+            # 检查是否所有目标用户组都已经存在（没有添加也没有移除）
+            if not added and not removed:
+                # 用户已经在所有组中，操作成功但没有变化
+                logger.info(f"用户 {user_id} 已经在 {target_groups} 组中: {self.wiki_name}")
                 return True
-            elif not added and not removed:
-                # 用户已经在组中，操作成功但没有变化
-                logger.info(f"用户 {user_id} 已经在 {group} 组中: {self.wiki_name}")
+            
+            # 如果部分用户组被添加，也算成功
+            if added:
+                logger.info(f"用户 {user_id} 部分用户组添加成功: {added} - {self.wiki_name}")
                 return True
-            else:
-                logger.warning(f"用户 {user_id} 添加 {group} 组失败: {self.wiki_name}")
+            
+            logger.warning(f"用户 {user_id} 添加 {target_groups} 组失败: {self.wiki_name}")
         else:
             logger.error(f"用户权限操作失败: {self.wiki_name}")
         

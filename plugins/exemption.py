@@ -155,14 +155,14 @@ async def handle_exemption(bot: Bot, event: GroupMessageEvent):
             # 构建成功消息
             if expiry_time:
                 expiry_display = format_expiry_time_display(expiry_time)
-                success_message = f"{slogan}过期时间为{expiry_display}"
+                success_message = f"{slogan}过期时间为{expiry_display}，"
             else:
                 success_message = slogan
             
             # 添加用户组信息
             if added_groups:
                 groups_info = "、".join(added_groups)
-                success_message += f"，已添加用户组：{groups_info}"
+                success_message += f"已添加用户组：{groups_info}"
             
             await message_sender.send_reply_with_reference(event, success_message)
             
@@ -303,9 +303,21 @@ async def _add_exemption_permission(user_id: str, exemption_config: dict, event:
             logger.error(f"免审配置不完整: {exemption_config}")
             return False, None, []
         
-        # 确保addgroup是列表格式
+        # 处理addgroup格式，支持多种配置方式
         if isinstance(addgroup, str):
-            addgroup = [addgroup]
+            # 如果是字符串，检查是否包含|分隔符
+            if "|" in addgroup:
+                # 使用|分隔的多个用户组
+                addgroup = addgroup.split("|")
+            else:
+                # 单个用户组
+                addgroup = [addgroup]
+        elif isinstance(addgroup, list):
+            # 已经是列表格式，直接使用
+            pass
+        else:
+            logger.error(f"不支持的addgroup格式: {addgroup}")
+            return False, None, []
         
         # 创建Wiki API实例
         wiki_api = get_wiki_api(wiki_name)
