@@ -74,6 +74,35 @@ class Config:
         }
     }
     
+    # 免审权限配置 - 关键字到权限设置的映射
+    EXEMPTION_CONFIGS: dict = {
+        "?lysk免审": {
+            "addgroup": ["automoderated"],
+            "wiki": "lysk",
+            "checkPermission": False,
+            "addTime":"curMonth"
+        },
+        "?lysk管理":{
+            "addgroup": ["interface-admin","sysop"],
+            "wiki": "lysk",
+            "checkPermission": True,
+            "addTime":"curMonth"
+        },
+        "?lyskbili":{
+            "addgroup": ["bilibili"],
+            "wiki": "lysk",
+            "checkPermission": False,
+            "addTime":"ever"
+        }
+    }
+    ADD_TIME_SLOGAN: dict = {
+        "curMonth":"本月权限新添就，感君劳苦付春秋。",
+        "ever":"一纸权限伴久长，百科万象任徜徉。"
+    }
+    
+    # Wiki API认证配置
+    WIKI_SESSDATA: str = os.getenv("WIKI_SESSDATA", "")  # 用于MediaWiki API认证的sessdata
+    
     # ===========================================
     # 🤖 AI功能配置
     # ===========================================

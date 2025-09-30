@@ -10,6 +10,7 @@
   - 随机数生成（`.rand`、`.randrange`）
   - AI对话功能（`?ai 问题`）
   - AI总结功能（`.ai_test`、`.ai`、`.ai_summary`）
+  - 免审权限管理（`?lysk免审 用户ID`）- 支持多用户组、灵活权限时间配置
   - 自适应消息发送（长文本自动转发，短文本普通发送）
   - 支持缓存，相同页面命中更快
 
@@ -39,20 +40,23 @@ botbwiki/
 │       ├── ai_prompts.py    # AI提示词
 │       ├── ai_summary_manager.py # AI总结管理
 │       ├── http_client.py   # HTTP API 客户端
-│       └── message_sender.py # 统一消息发送器
+│       ├── message_sender.py # 统一消息发送器
+│       └── wiki_api.py      # Wiki API 封装模块
 ├── plugins/                  # 插件目录
 │   ├── shortlink.py         # 短链功能
 │   ├── random.py            # 随机数功能
 │   ├── ai_summary.py        # AI总结功能
 │   ├── ai_test_simple.py    # AI测试功能
 │   ├── ai_chat.py           # AI对话功能（已优化为HTTP API）
-│   └── group_summary.py     # 群消息总结插件（已修复历史消息获取问题）
+│   ├── group_summary.py     # 群消息总结插件（已修复历史消息获取问题）
+│   └── exemption.py         # 免审权限管理插件
 ├── config/                   # 配置文件目录
 │   ├── env.example          # 环境变量模板
 │   ├── lagrange-config-template.json # Lagrange配置模板
 │   └── systemd-service-templates/     # 系统服务模板
 ├── tools/                    # 工具目录
 │   ├── test_message_sender.py # 消息发送器测试工具
+│   ├── test_exemption.py    # 免审权限插件测试工具
 │   └── ...                  # 其他工具
 ├── scripts/                  # 脚本目录
 │   ├── start.sh             # 启动脚本
@@ -75,6 +79,7 @@ botbwiki/
 - 群内使用说明：`docs/usage.md`
 - HTTP API 使用指南：`docs/http_api_usage.md`
 - 群消息总结使用指南：`docs/group_summary_usage.md`
+- 免审权限管理使用指南：`docs/exemption_usage.md`
 
 ## 技术栈
 
@@ -165,6 +170,11 @@ python -m src.core.verify_config
 ✅ **群消息总结功能**: 新增群消息总结插件，支持自动提取技术答疑和知识共享内容
 
 ### 最新更新
+- **2025-01-XX**: 修复免审插件表情回复问题
+  - 修复了免审插件中emoji表情（❌、✅）无法正常显示的问题
+  - 将emoji表情改为系统表情ID：成功使用124（OK），失败使用123（NO）
+  - 根据QQ机器人表情对象文档，系统表情（类型1）比emoji表情（类型2）兼容性更好
+  - 现在权限验证失败时会正确显示NO表情，操作成功时显示OK表情
 - **2025-01-XX**: 优化AI触发响应机制，将文字提示改为表情回复
   - 新增表情回复API支持（基于Lagrange.OneBot的set_group_reaction接口）
   - 修改AI处理器，识别到AI触发时立即发送🤖表情回复
@@ -191,6 +201,7 @@ python -m src.core.verify_config
 - `群总结 [日期]` - 总结指定日期的群消息 ✅
 - `批量总结 <天数>` - 批量生成最近N天的总结 ✅
 - `查看总结 [日期]` - 查看指定日期的总结结果 ✅
+- `?lysk免审 <用户ID>` - 为指定用户添加恋与深空WIKI免审权限（支持多用户组、灵活时间配置） ✅
 
 ### 配置要求
 1. **AI服务账号**：支持多种AI服务，包括LongCat AI、火山引擎AI、智谱AI GLM等
@@ -228,6 +239,72 @@ python -m src.core.verify_config
 #### 数据存储
 - **原始记录**: `./data/history/{群ID}-{日期}.json`
 - **总结结果**: `./data/daySummary/{群ID}-{日期}-summary.json`
+
+### 免审权限管理功能详细说明
+
+#### 功能特性
+1. **权限验证**: 仅群管理员可执行免审权限操作
+2. **智能UID提取**: 支持从消息内容和群昵称中自动提取用户ID
+3. **多Wiki支持**: 可扩展支持多个Wiki站点的权限管理
+4. **多用户组支持**: 支持同时添加多个用户组到同一用户
+5. **灵活时间配置**: 支持月末权限（curMonth）和永久权限（ever）两种模式
+6. **智能回复**: 添加成功后引用用户消息并回复详细信息
+7. **表情反馈**: 使用表情符号快速反馈操作结果
+8. **安全认证**: 支持使用sessdata进行MediaWiki API认证
+
+#### 使用示例
+```
+?lysk免审 2342354                    # 为UID 2342354 添加恋与深空WIKI免审权限
+?lysk免审                            # 从发送者的群昵称中提取UID并添加权限
+?lysk管理 1234567                    # 为UID 1234567 添加管理权限（多个用户组）
+?lyskbili 9876543                    # 为UID 9876543 添加bilibili权限（永久）
+```
+
+#### 操作流程
+1. **权限检查**: 验证发送者是否为群管理员（根据配置决定）
+2. **UID提取**: 从消息内容或群昵称中提取用户ID
+3. **时间计算**: 根据addTime配置计算权限到期时间
+4. **多组添加**: 循环添加配置中的所有用户组
+5. **结果反馈**: 使用表情符号反馈操作结果，并引用回复详细信息
+
+#### 配置要求
+1. **环境变量**: 在`.env`文件中配置`WIKI_SESSDATA`用于API认证
+2. **权限配置**: 在`config.py`中配置免审关键字和对应的用户组
+3. **群管理员权限**: 根据配置决定是否需要群管理员权限
+
+#### 配置示例
+```python
+# config.py 中的免审权限配置
+EXEMPTION_CONFIGS = {
+    "?lysk免审": {
+        "addgroup": ["automoderated"],    # 要添加的用户组（支持数组）
+        "wiki": "lysk",                  # 对应的wiki站点
+        "checkPermission": False,         # 是否需要权限验证
+        "addTime": "curMonth"            # 权限时间类型：curMonth(月末) 或 ever(永久)
+    },
+    "?lysk管理": {
+        "addgroup": ["interface-admin", "sysop"],  # 多个用户组
+        "wiki": "lysk",
+        "checkPermission": True,          # 需要管理员权限
+        "addTime": "curMonth"
+    },
+    "?lyskbili": {
+        "addgroup": ["bilibili"],
+        "wiki": "lysk",
+        "checkPermission": False,
+        "addTime": "ever"                # 永久权限
+    }
+}
+
+# 权限时间提示语配置
+ADD_TIME_SLOGAN = {
+    "curMonth": "本月权限新添就，感君劳苦付春秋。",
+    "ever": "一纸权限伴久长，百科万象任徜徉。"
+}
+
+# .env 文件中的认证配置
+WIKI_SESSDATA=your_sessdata_here
+```
 
 #### 总结格式
 ```json
