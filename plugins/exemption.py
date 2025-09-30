@@ -7,7 +7,7 @@
 import re
 import sys
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from calendar import monthrange
 from nonebot import on_message
 from nonebot.adapters.onebot.v11 import Bot, GroupMessageEvent
@@ -29,15 +29,21 @@ def get_month_end_time() -> str:
     Returns:
         ISO 8601格式的时间字符串 (YYYY-MM-DDTHH:MM:SSZ)
     """
+    # 获取当前本地时间
     now = datetime.now()
     # 获取当前月份的最后一天
     last_day = monthrange(now.year, now.month)[1]
     
-    # 创建当前月份最后一天23:59的时间
-    month_end = datetime(now.year, now.month, last_day, 23, 59, 0)
+    # 创建当前月份最后一天23:59的本地时间
+    month_end_local = datetime(now.year, now.month, last_day, 23, 59, 0)
+    
+    # 将本地时间转换为UTC时间
+    # 假设服务器运行在中国时区（UTC+8）
+    local_tz = timezone(timedelta(hours=8))
+    month_end_utc = month_end_local.replace(tzinfo=local_tz).astimezone(timezone.utc)
     
     # 转换为ISO 8601格式
-    return month_end.strftime("%Y-%m-%dT%H:%M:%SZ")
+    return month_end_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def get_expiry_time_by_addtime(add_time: str) -> Optional[str]:
@@ -65,16 +71,22 @@ def format_expiry_time_display(expiry_time: str) -> str:
     格式化到期时间显示
     
     Args:
-        expiry_time: ISO 8601格式的时间字符串
+        expiry_time: ISO 8601格式的时间字符串（UTC时间）
         
     Returns:
-        格式化的时间显示字符串
+        格式化的时间显示字符串（本地时间）
     """
     try:
-        # 解析ISO 8601时间
-        dt = datetime.strptime(expiry_time, "%Y-%m-%dT%H:%M:%SZ")
+        # 解析ISO 8601时间（UTC）
+        dt_utc = datetime.strptime(expiry_time, "%Y-%m-%dT%H:%M:%SZ")
+        dt_utc = dt_utc.replace(tzinfo=timezone.utc)
+        
+        # 转换为本地时间（中国时区 UTC+8）
+        local_tz = timezone(timedelta(hours=8))
+        dt_local = dt_utc.astimezone(local_tz)
+        
         # 格式化为中文显示
-        return dt.strftime("%Y年%m月%d日 %H:%M")
+        return dt_local.strftime("%Y年%m月%d日 %H:%M")
     except ValueError:
         return expiry_time
 
@@ -331,19 +343,22 @@ async def _add_exemption_permission(user_id: str, exemption_config: dict, event:
         # 根据addTime配置计算到期时间
         expiry_time = get_expiry_time_by_addtime(add_time)
         
-        # 构建操作原因
-        reason = f"机器人自动添加免审权限 (操作者: {event.user_id}, 群: {event.group_id})"
+        # 构建详细的操作原因（用于日志记录）
+        detailed_reason = f"机器人自动添加免审权限 (操作者: {event.user_id}, 群: {event.group_id})"
+        
+        # 获取slogan作为wiki操作原因
+        wiki_reason = config.ADD_TIME_SLOGAN.get(add_time, "权限添加成功")
         
         # 执行添加用户组操作 - 支持多个用户组
         # 根据API文档，使用|分隔多个用户组，一次API调用完成
         groups_str = "|".join(addgroup)
-        success = await wiki_api.add_user_to_group(user_id, groups_str, reason, expiry_time)
+        success = await wiki_api.add_user_to_group(user_id, groups_str, wiki_reason, expiry_time)
         
         if success:
-            logger.info(f"免审权限添加完成: 用户 {user_id}, 成功添加用户组: {addgroup}, 到期时间: {expiry_time or '永久'}")
+            logger.info(f"免审权限添加完成: {detailed_reason}, 用户 {user_id}, 成功添加用户组: {addgroup}, 到期时间: {expiry_time or '永久'}")
             return True, expiry_time, addgroup
         else:
-            logger.error(f"免审权限添加失败: 用户 {user_id}, 用户组: {addgroup}")
+            logger.error(f"免审权限添加失败: {detailed_reason}, 用户 {user_id}, 用户组: {addgroup}")
             return False, None, []
         
     except Exception as e:
