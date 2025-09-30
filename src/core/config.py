@@ -82,13 +82,13 @@ class Config:
     AI_TRIGGER_PREFIX: str = os.getenv("AI_TRIGGER_PREFIX", "?ai")                     # 用户偏好
     AI_DAY_SUMMARY_PREFIX: str = os.getenv("AI_DAY_SUMMARY_PREFIX", "?ai_daySum")     # 日总结指令
     DEFAULT_AI_SERVICE: str = os.getenv("DEFAULT_AI_SERVICE", "volc")                 # 用户选择默认AI服务
-    AI_SUMMARY_MAX_TOKENS: int = int(os.getenv("AI_SUMMARY_MAX_TOKENS", "2000"))     # 性能调优
+    AI_SUMMARY_MAX_TOKENS: int = int(os.getenv("AI_SUMMARY_MAX_TOKENS", "10000"))     # 性能调优
     AI_SUMMARY_TIMEOUT: int = int(os.getenv("AI_SUMMARY_TIMEOUT", "30"))             # 性能调优
     AI_LOG_DIR: str = "logs/ai"                                                       # 固定路径
     AI_SUMMARY_ENABLED: bool = os.getenv("AI_SUMMARY_ENABLED", "true").lower() == "true"  # 功能开关
     
     # AI Prompt配置 - 自动添加到用户问题前的提示词
-    AI_PROMPT_PREFIX: str = os.getenv("AI_PROMPT_PREFIX", "请不要使用markdown语法，回复token控制在2000以内。用户问题：")
+    AI_PROMPT_PREFIX: str = os.getenv("AI_PROMPT_PREFIX", "1、请不要使用markdown语法。2、用户问题如果为寻求建议、请求帮助、查询内容等技术性问题则正常回复，用户问题为调侃、闲聊、夸夸等非技术性问题则请将回复字数控制在400字内。用户问题：")
     
     # AI服务配置 - 精简配置结构
     AI_SERVICES: dict = {
@@ -167,7 +167,7 @@ class Config:
     
     # 转发消息配置
     MESSAGE_FORWARD_ENABLED: bool = True  # 转发消息开关
-    MESSAGE_FORWARD_THRESHOLD: int = 200  # 超过此长度自动转发（字符数）
+    MESSAGE_FORWARD_THRESHOLD: int = 420  # 超过此长度自动转发（字符数）
     MESSAGE_FORWARD_MAX_LENGTH: int = 2000  # 单条转发消息最大长度
     MESSAGE_FORWARD_MAX_COUNT: int = 10  # 最大转发消息数量
     
