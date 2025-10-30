@@ -104,7 +104,7 @@ sudo netstat -tlnp | grep 8080 || true
 sudo lsof -i :8080 || true
 ```
 
-### 4.2 修改端口配置
+### 4.2 Lagrange 端口配置修改
 若冲突，修改配置：
 ```bash
 # 修改 Lagrange 配置
@@ -119,6 +119,102 @@ sudo systemctl restart lagrange-onebot qq-bot
 # 验证修改
 ss -tlnp | grep 8081 || true
 ```
+
+### 4.3 NapCat 端口冲突问题（常见）
+
+**症状：** 机器人收到消息但不回复，API 调用返回 `HTTP 426: Upgrade Required`
+
+**原因：** NapCat 的 HTTP 和 WebSocket 服务配置在同一端口，导致端口冲突
+
+**解决步骤：**
+
+1. **定位 NapCat 配置文件**
+```bash
+# 查找 NapCat 配置目录
+sudo find /root -type d -name "*napcat*"
+# 通常在：/root/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/
+
+# 查看配置文件（QQ号会不同）
+ls /root/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/
+```
+
+2. **检查当前配置**
+```bash
+# 查看 OneBot 配置（替换为实际的 QQ 号）
+cat /root/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/onebot11_QQNUMBER.json
+```
+
+3. **修复端口冲突**
+```bash
+# 备份配置文件
+sudo cp /root/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/onebot11_QQNUMBER.json \
+       /root/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/onebot11_QQNUMBER.json.backup
+
+# 修改配置：HTTP 使用 8080，WebSocket 使用 8081
+sudo tee /root/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/onebot11_QQNUMBER.json > /dev/null << 'EOF'
+{
+  "network": {
+    "httpServers": [
+      {
+        "enable": true,
+        "host": "127.0.0.1",
+        "port": 8080,
+        "secret": "",
+        "enableHeart": true,
+        "enablePost": true,
+        "enableWebsocket": false
+      }
+    ],
+    "websocketServers": [
+      {
+        "enable": true,
+        "host": "127.0.0.1",
+        "port": 8081,
+        "path": "/onebot/v11/ws",
+        "secret": "",
+        "enableHeart": true
+      }
+    ]
+  }
+}
+EOF
+```
+
+4. **更新机器人配置**
+```bash
+# 修改 .env 文件中的 WebSocket 端口
+sed -i 's|ws://127.0.0.1:8080/onebot/v11/ws|ws://127.0.0.1:8081/onebot/v11/ws|g' /home/ubuntu/botbwiki/botbwiki/.env
+```
+
+5. **重启服务**
+```bash
+# 重启 NapCat（如果使用 systemd）
+sudo systemctl restart napcat
+
+# 或者手动重启 NapCat 进程
+sudo pkill -f "qq --no-sandbox"
+# 然后重新启动 NapCat
+
+# 重启机器人
+sudo systemctl restart qq-bot
+```
+
+6. **验证修复**
+```bash
+# 检查端口监听状态
+ss -tlnp | grep -E "(8080|8081)"
+
+# 测试 HTTP API
+curl -X POST http://127.0.0.1:8080/get_status -H "Content-Type: application/json" -d "{}"
+
+# 应该返回类似：{"status":"ok","retcode":0,"data":{"online":true,"good":true}}
+```
+
+**关键配置要点：**
+- `enablePost` 必须为 `true`
+- HTTP 服务器的 `enableWebsocket` 必须为 `false`
+- HTTP 和 WebSocket 必须使用不同端口
+- 机器人的 `.env` 文件中 WebSocket URL 要对应正确端口
 
 ## 5. 权限问题
 

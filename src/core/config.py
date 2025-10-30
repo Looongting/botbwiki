@@ -22,7 +22,7 @@ class Config:
     ONEBOT_WS_URLS: str = os.getenv("ONEBOT_WS_URLS", '["ws://127.0.0.1:8080/onebot/v11/ws"]')
     ONEBOT_HTTP_URL: str = os.getenv("ONEBOT_HTTP_URL", "http://127.0.0.1:8080")
     
-    # HTTP API 配置（用于直接调用 Lagrange.OneBot API）
+    # HTTP API 配置（用于直接调用 OneBot API）
     ONEBOT_HTTP_API_URL: str = os.getenv("ONEBOT_HTTP_API_URL", "http://127.0.0.1:8081")
     
     # 短链服务配置
