@@ -63,7 +63,7 @@ class AIHandler:
                 await self.message_sender.send_reply_with_reference(event, "❌ 没有可用的AI服务，请检查配置")
                 return False
             
-            # 发送表情回复（替代原来的文字提示）
+            # 发送表情回复（现在支持OneBot和NapCat兼容）
             # 根据不同的AI服务使用不同的表情ID
             reaction_id = await self._get_ai_reaction_id(actual_service)
             await self.message_sender.send_reaction_to_event(event, reaction_id)
@@ -143,7 +143,7 @@ class AIHandler:
             表情ID字符串
         """
         service_config = config.AI_SERVICES.get(service_name, {})
-        reaction_id = service_config.get('reaction_id', '2')  # 默认使用ID 2
+        reaction_id = service_config.get('reaction_id', '32')  # 默认使用机器人表情ID 32
         logger.info(f"AI服务 {service_name} 使用表情ID: {reaction_id}")
         return reaction_id
     

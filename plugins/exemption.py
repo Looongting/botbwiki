@@ -141,7 +141,7 @@ async def handle_exemption(bot: Bot, event: GroupMessageEvent):
         if exemption_config.get("checkPermission", False):
             # 检查发送者是否为群管理员
             if not await _check_user_permission(bot, event):
-                # 发送错误表情 - 使用系统表情ID 123 (NO)
+                # 发送错误表情 - 使用系统表情ID 10060 (NO)
                 await message_sender.send_reaction_to_event(event, "10060")
                 logger.warning(f"用户 {event.user_id} 无权限执行免审操作")
                 return

@@ -212,6 +212,36 @@ class LagrangeAPIClient:
             "is_add": is_add
         })
     
+    async def set_msg_emoji_like(self, message_id: int, emoji_id: str) -> Dict[str, Any]:
+        """
+        设置消息表情回复 (NapCat扩展API)
+        
+        Args:
+            message_id: 消息ID
+            emoji_id: 表情ID
+            
+        Returns:
+            API 响应结果
+        """
+        return await self.call_api("set_msg_emoji_like", {
+            "message_id": message_id,
+            "emoji_id": emoji_id
+        })
+    
+    async def ocr_image(self, image: str) -> Dict[str, Any]:
+        """
+        图片OCR文字识别 (NapCat扩展API)
+        
+        Args:
+            image: 图片文件路径或URL
+            
+        Returns:
+            API 响应结果，包含识别出的文字内容
+        """
+        return await self.call_api("ocr_image", {
+            "image": image
+        })
+    
     # ===========================================
     # 批量操作相关 API
     # ===========================================

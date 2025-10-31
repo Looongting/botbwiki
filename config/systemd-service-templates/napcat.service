@@ -9,7 +9,7 @@ User=ubuntu
 Group=ubuntu
 WorkingDirectory=/home/ubuntu/Napcat/opt/QQ
 ExecStartPre=/bin/bash -c 'pgrep -f "Xvfb :1" > /dev/null || Xvfb :1 -screen 0 1x1x8 +extension GLX +render > /dev/null 2>&1 &'
-ExecStart=/bin/bash -c 'export DISPLAY=:1 && LD_PRELOAD=./libnapcat_launcher.so ./qq --no-sandbox'
+ExecStart=/bin/bash -c 'export DISPLAY=:1 && LD_PRELOAD=./libnapcat_launcher.so ./qq --no-sandbox -q 3330219965'
 Restart=always
 RestartSec=10
 StandardOutput=journal

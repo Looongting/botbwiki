@@ -616,7 +616,7 @@ class MessageSender:
     
     async def send_group_reaction(self, group_id: int, message_id: int, reaction_code: str = "👍", is_add: bool = True) -> bool:
         """
-        发送群消息表情回复
+        发送群消息表情回复（兼容OneBot和NapCat）
         
         Args:
             group_id: 群ID
@@ -628,16 +628,79 @@ class MessageSender:
             发送是否成功
         """
         try:
+            # 首先尝试使用OneBot的set_group_reaction
             result = await self.client.set_group_reaction(group_id, message_id, reaction_code, is_add)
             if result.get("status") == "ok":
-                logger.info(f"表情回复发送成功: group:{group_id}, message:{message_id}, reaction:{reaction_code}")
+                logger.info(f"表情回复发送成功(OneBot): group:{group_id}, message:{message_id}, reaction:{reaction_code}")
                 return True
             else:
-                logger.error(f"表情回复发送失败: {result.get('error', '未知错误')}")
+                logger.warning(f"OneBot表情回复失败: {result.get('error', '未知错误')}，尝试NapCat API")
+                # 回退到NapCat的set_msg_emoji_like
+                return await self._send_napcat_emoji_like(message_id, reaction_code)
+        except Exception as e:
+            logger.warning(f"OneBot表情回复异常: {e}，尝试NapCat API")
+            # 回退到NapCat的set_msg_emoji_like
+            return await self._send_napcat_emoji_like(message_id, reaction_code)
+    
+    async def _send_napcat_emoji_like(self, message_id: int, reaction_code: str) -> bool:
+        """
+        使用NapCat的set_msg_emoji_like发送表情回复
+        
+        Args:
+            message_id: 消息ID
+            reaction_code: 表情代码
+            
+        Returns:
+            发送是否成功
+        """
+        try:
+            # 将表情代码转换为emoji_id（这里使用简单的映射）
+            emoji_id = self._convert_reaction_to_emoji_id(reaction_code)
+            result = await self.client.set_msg_emoji_like(message_id, emoji_id)
+            if result.get("status") == "ok":
+                logger.info(f"表情回复发送成功(NapCat): message:{message_id}, emoji_id:{emoji_id}")
+                return True
+            else:
+                logger.error(f"NapCat表情回复发送失败: {result.get('error', '未知错误')}")
                 return False
         except Exception as e:
-            logger.error(f"表情回复发送异常: {e}")
+            logger.error(f"NapCat表情回复发送异常: {e}")
             return False
+    
+    def _convert_reaction_to_emoji_id(self, reaction_code: str) -> str:
+        """
+        将表情代码转换为NapCat的emoji_id
+        
+        Args:
+            reaction_code: 表情代码
+            
+        Returns:
+            emoji_id字符串
+        """
+        # 常用表情映射表（可以根据需要扩展）
+        emoji_mapping = {
+            "👍": "1",      # 点赞
+            "❤️": "2",      # 爱心
+            "😂": "3",      # 笑哭
+            "😮": "4",      # 惊讶
+            "😢": "5",      # 哭泣
+            "🤖": "32",     # 机器人（AI相关）
+            "✅": "124",    # 成功
+            "❌": "10060",  # 失败
+            "2": "2",       # 直接使用数字ID
+            "32": "32",
+            "124": "124",
+            "10060": "10060"
+        }
+        
+        # 如果是直接的emoji_id，直接返回
+        if reaction_code.isdigit():
+            return reaction_code
+            
+        # 查找映射表
+        emoji_id = emoji_mapping.get(reaction_code, "1")  # 默认使用点赞
+        logger.debug(f"表情代码转换: {reaction_code} -> {emoji_id}")
+        return emoji_id
     
     async def send_reaction_to_event(self, event: Union[GroupMessageEvent, PrivateMessageEvent], reaction_code: str = "🤖") -> bool:
         """
