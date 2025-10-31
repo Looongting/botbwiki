@@ -1,0 +1,37 @@
+[Unit]
+Description=NapCat QQ Bot Service
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/home/ubuntu/Napcat/opt/QQ
+ExecStartPre=/bin/bash -c 'pgrep -f "Xvfb :1" > /dev/null || Xvfb :1 -screen 0 1x1x8 +extension GLX +render > /dev/null 2>&1 &'
+ExecStart=/bin/bash -c 'export DISPLAY=:1 && LD_PRELOAD=./libnapcat_launcher.so ./qq --no-sandbox'
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=napcat
+
+# 环境变量
+Environment=DISPLAY=:1
+Environment=NAPCAT_CONFIG_PATH=/home/ubuntu/botbwiki/onebot11_config.json
+
+# 安全设置
+NoNewPrivileges=false
+ProtectSystem=false
+ProtectHome=false
+
+# 资源限制
+MemoryMax=1G
+TasksMax=200
+
+# 自动重启设置
+StartLimitInterval=60
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

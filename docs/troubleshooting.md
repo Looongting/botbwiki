@@ -94,9 +94,79 @@ cd /opt/lagrange && ./Lagrange.OneBot
 sudo journalctl -u lagrange-onebot -n 20 | grep -E "(Login|Connect|QR)"
 ```
 
-## 4. 端口冲突与修改
+## 4. NapCat 虚拟显示环境问题
 
-### 4.1 检查端口占用
+### 4.1 检查虚拟显示服务器状态
+```bash
+# 检查 Xvfb 进程是否运行
+ps aux | grep Xvfb | grep -v grep
+
+# 检查显示环境变量
+echo $DISPLAY
+
+# 测试虚拟显示连接
+xdpyinfo -display :1 2>/dev/null || echo "虚拟显示未运行"
+```
+
+### 4.2 启动虚拟显示服务器
+```bash
+# 安装 Xvfb（如果未安装）
+sudo apt update && sudo apt install -y xvfb
+
+# 启动虚拟显示服务器
+Xvfb :1 -screen 0 1x1x8 +extension GLX +render > /dev/null 2>&1 &
+
+# 设置环境变量
+export DISPLAY=:1
+
+# 验证启动成功
+ps aux | grep "Xvfb :1" | grep -v grep
+```
+
+### 4.3 NapCat 启动失败排查
+```bash
+# 检查 NapCat 进程状态
+ps aux | grep qq | grep -v grep
+
+# 检查 NapCat 启动日志
+tail -f /home/ubuntu/Napcat/opt/QQ/resources/app/app_launcher/napcat/logs/*.log
+
+# 手动启动 NapCat 进行调试
+cd /home/ubuntu/Napcat/opt/QQ
+export DISPLAY=:1
+LD_PRELOAD=./libnapcat_launcher.so ./qq --no-sandbox
+```
+
+### 4.4 配置文件加载问题
+```bash
+# 检查 NapCat 配置文件是否存在
+ls -la /home/ubuntu/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/
+
+# 查看配置文件内容（替换为实际 QQ 号）
+cat /home/ubuntu/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/onebot11_QQNUMBER.json
+
+# 如果配置文件为空或不正确，复制正确配置
+cp /home/ubuntu/botbwiki/botbwiki/onebot11_config.json \
+   /home/ubuntu/Napcat/opt/QQ/resources/app/app_launcher/napcat/config/onebot11_QQNUMBER.json
+```
+
+### 4.5 快速登录问题
+```bash
+# 检查 QQ 登录数据目录
+ls -la /home/ubuntu/.config/QQ/
+
+# 使用快速登录启动 NapCat
+cd /home/ubuntu/Napcat/opt/QQ
+export DISPLAY=:1
+LD_PRELOAD=./libnapcat_launcher.so ./qq --no-sandbox -q QQNUMBER
+
+# 如果仍需要扫码，检查登录数据完整性
+ls -la /home/ubuntu/.config/QQ/nt_qq*/
+```
+
+## 5. 端口冲突与修改
+
+### 5.1 检查端口占用
 ```bash
 # 检查 8080 是否被占用
 ss -tlnp | grep 8080 || true
@@ -104,7 +174,7 @@ sudo netstat -tlnp | grep 8080 || true
 sudo lsof -i :8080 || true
 ```
 
-### 4.2 Lagrange 端口配置修改
+### 5.2 Lagrange 端口配置修改
 若冲突，修改配置：
 ```bash
 # 修改 Lagrange 配置
@@ -120,7 +190,7 @@ sudo systemctl restart lagrange-onebot qq-bot
 ss -tlnp | grep 8081 || true
 ```
 
-### 4.3 NapCat 端口冲突问题（常见）
+### 5.3 NapCat 端口冲突问题（常见）
 
 **症状：** 机器人收到消息但不回复，API 调用返回 `HTTP 426: Upgrade Required`
 
@@ -216,9 +286,9 @@ curl -X POST http://127.0.0.1:8080/get_status -H "Content-Type: application/json
 - HTTP 和 WebSocket 必须使用不同端口
 - 机器人的 `.env` 文件中 WebSocket URL 要对应正确端口
 
-## 5. 权限问题
+## 6. 权限问题
 
-### 5.1 VSCode 无法编辑文件
+### 6.1 VSCode 无法编辑文件
 ```bash
 # 修改文件所有者
 sudo chown $USER:$USER /opt/lagrange/appsettings.json
@@ -229,7 +299,7 @@ sudo chown -R $USER:$USER /opt/lagrange
 sudo chown -R $USER:$USER /home/ubuntu/botbwiki
 ```
 
-### 5.2 检查文件权限
+### 6.2 检查文件权限
 ```bash
 # 检查文件权限
 ls -la /opt/lagrange/appsettings.json
@@ -237,9 +307,9 @@ ls -la /home/ubuntu/botbwiki/.env
 ls -la /opt/lagrange/Lagrange.OneBot
 ```
 
-## 6. Python 环境问题
+## 7. Python 环境问题
 
-### 6.1 虚拟环境问题
+### 7.1 虚拟环境问题
 ```bash
 cd /home/ubuntu/botbwiki
 source venv/bin/activate
@@ -253,7 +323,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 6.2 依赖冲突
+### 7.2 依赖冲突
 ```bash
 # 检查依赖版本
 pip list | grep -E "(nonebot|httpx|websockets)"
@@ -265,9 +335,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## 7. 网络连接问题
+## 8. 网络连接问题
 
-### 7.1 检查网络连通性
+### 8.1 检查网络连通性
 ```bash
 # 检查本地连接
 curl -I http://127.0.0.1:8080 || true
@@ -276,7 +346,7 @@ curl -I http://127.0.0.1:8080 || true
 curl -I https://sign.lagrangecore.org/api/sign/39038 || true
 ```
 
-### 7.2 防火墙配置
+### 8.2 防火墙配置
 ```bash
 # 检查防火墙状态
 sudo ufw status
@@ -287,16 +357,16 @@ sudo ufw allow 8080  # OneBot WebSocket
 sudo ufw enable
 ```
 
-## 8. 快速体检工具
+## 9. 快速体检工具
 ```bash
 cd /home/ubuntu/botbwiki
 python check_env.py
 python verify_config.py
 ```
 
-## 9. 性能问题
+## 10. 性能问题
 
-### 9.1 资源使用检查
+### 10.1 资源使用检查
 ```bash
 # 检查系统资源
 htop
@@ -308,7 +378,7 @@ df -h
 sudo systemctl status lagrange-onebot qq-bot
 ```
 
-### 9.2 日志轮转配置
+### 10.2 日志轮转配置
 ```bash
 # 配置日志轮转
 sudo tee /etc/logrotate.d/qq-bot > /dev/null << 'EOF'
@@ -324,9 +394,9 @@ sudo tee /etc/logrotate.d/qq-bot > /dev/null << 'EOF'
 EOF
 ```
 
-## 10. 仍未解决？
+## 11. 仍未解决？
 
-### 10.1 收集诊断信息
+### 11.1 收集诊断信息
 ```bash
 # 收集系统信息
 uname -a
@@ -344,7 +414,7 @@ sudo journalctl -u qq-bot -n 200 > /tmp/bot_logs.txt
 grep -v "password\|token\|key" /home/ubuntu/botbwiki/.env > /tmp/env_config.txt
 ```
 
-### 10.2 提供信息
+### 11.2 提供信息
 提供以下信息：
 - 两份服务的 `systemctl status`
 - 最近 200 行 `journalctl`

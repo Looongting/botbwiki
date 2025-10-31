@@ -1,16 +1,16 @@
 [Unit]
 Description=QQ Bot Service
-After=network.target lagrange-onebot.service
+After=network.target napcat.service
 Wants=network-online.target
-Requires=lagrange-onebot.service
+Requires=napcat.service
 
 [Service]
 Type=simple
 User=ubuntu
 Group=ubuntu
-WorkingDirectory=/home/ubuntu/botbwiki
-Environment=PATH=/home/ubuntu/botbwiki/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ExecStart=/home/ubuntu/botbwiki/venv/bin/python main.py
+WorkingDirectory=/home/ubuntu/botbwiki/botbwiki
+Environment=PATH=/home/ubuntu/botbwiki/botbwiki/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/home/ubuntu/botbwiki/botbwiki/venv/bin/python main.py
 Restart=always
 RestartSec=10
 StandardOutput=journal
